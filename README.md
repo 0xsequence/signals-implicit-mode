@@ -4,7 +4,7 @@ Libraries for managing support for [Sequence Ecosystem Wallet](https://github.co
 
 ## Implicit Registry
 
-The `ImplicitRegistry` is an ownerless, singleton contract that allows a single contract to define the accepted `redirectUrl`s for their project. Using the registry gives a single point for management of accepted `redirectUrl`s. 
+The `ImplicitProjectRegistry` is an ownerless, singleton contract that allows a single contract to define the accepted `redirectUrl`s for their project. Using the registry gives a single point for management of accepted `redirectUrl`s. 
 
 Using the registry is also a quick way to authorize implicit access to contracts from other projects. 
 
@@ -56,10 +56,10 @@ forge test
 ## Deploy Contracts
 
 > [!NOTE]
-> This will deploy the `ImplicitRegistry`. Deployments use ERC-2470 for counter factual deployments and will deploy to `0x85625a67eec5b18Fb0Bbcd0DA41c813882A183B1`.
+> This will deploy the `ImplicitProjectRegistry`. Deployments use ERC-2470 for counter factual deployments and will deploy to `0x18e351c182462168BA271aAeff55715CeccD0B65`.
 
 > [!TIP]
-> The `ImplicitRegistry` is ownerless and so you are free to use an implementation and claim any `projectId`. You do not need to deploy your own instance.
+> The `ImplicitProjectRegistry` is ownerless and so you are free to use an implementation and claim any `projectId`. You do not need to deploy your own instance.
 
 Copy the `env.sample` file to `.env` and set the environment variables.
 

@@ -4,18 +4,18 @@ pragma solidity ^0.8.13;
 import { Attestation } from "sequence-v3/src/extensions/sessions/implicit/Attestation.sol";
 import { ISignalsImplicitMode } from "sequence-v3/src/extensions/sessions/implicit/ISignalsImplicitMode.sol";
 import { Payload } from "sequence-v3/src/modules/Payload.sol";
-import { IImplicitProjectRegistry } from "src/registry/IImplicitProjectRegistry.sol";
+import { IImplicitProjectValidation } from "src/registry/IImplicitProjectValidation.sol";
 
 abstract contract SignalsImplicitMode is ISignalsImplicitMode {
 
-  IImplicitProjectRegistry internal _registry;
+  IImplicitProjectValidation internal _validator;
   bytes32 internal _projectId;
 
   /// @notice Constructor
-  /// @param registry The IImplicitRegistry address
+  /// @param validator The IImplicitProjectValidation address
   /// @param projectId The project id
-  constructor(address registry, bytes32 projectId) {
-    _registry = IImplicitProjectRegistry(registry);
+  constructor(address validator, bytes32 projectId) {
+    _validator = IImplicitProjectValidation(validator);
     _projectId = projectId;
   }
 
@@ -30,7 +30,7 @@ abstract contract SignalsImplicitMode is ISignalsImplicitMode {
     Payload.Call calldata call
   ) external view returns (bytes32) {
     _validateImplicitRequest(wallet, attestation, call);
-    return _registry.validateAttestation(wallet, attestation, _projectId);
+    return _validator.validateAttestation(wallet, attestation, _projectId);
   }
 
   /// @notice Validates an implicit request
