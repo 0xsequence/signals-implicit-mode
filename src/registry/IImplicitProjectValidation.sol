@@ -3,7 +3,7 @@ pragma solidity ^0.8.13;
 
 import {Attestation} from "sequence-v3/src/extensions/sessions/implicit/Attestation.sol";
 
-interface IImplicitRegistry {
+interface IImplicitProjectValidation {
     /// @notice Invalid redirect url error
     error InvalidRedirectUrl();
 
@@ -12,7 +12,7 @@ interface IImplicitRegistry {
     /// @param attestation The attestation
     /// @param projectId The project id
     /// @return magic The attestation magic bytes for the wallet address
-    function validateProjectUrl(address wallet, Attestation calldata attestation, bytes32 projectId)
+    function validateAttestation(address wallet, Attestation calldata attestation, bytes32 projectId)
         external
         view
         returns (bytes32);

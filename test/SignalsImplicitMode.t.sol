@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.13;
 
-import {Test, console} from "forge-std/Test.sol";
 import {SignalsImplicitModeMock} from "./mock/SignalsImplicitModeMock.sol";
+import {Test, console} from "forge-std/Test.sol";
 
-import {ImplicitRegistry} from "src/registry/ImplicitRegistry.sol";
-import {IImplicitRegistry} from "src/registry/IImplicitRegistry.sol";
+import {IImplicitProjectValidation} from "src/registry/IImplicitProjectValidation.sol";
+import {ImplicitProjectRegistry} from "src/registry/ImplicitProjectRegistry.sol";
 
 import {Attestation, LibAttestation} from "sequence-v3/src/extensions/sessions/implicit/Attestation.sol";
 import {Payload} from "sequence-v3/src/modules/Payload.sol";
@@ -14,10 +14,10 @@ contract SignalsImplicitModeTest is Test {
     using LibAttestation for Attestation;
 
     SignalsImplicitModeMock public signalsImplicitMode;
-    ImplicitRegistry public registry;
+    ImplicitProjectRegistry public registry;
 
     function setUp() public {
-        registry = new ImplicitRegistry();
+        registry = new ImplicitProjectRegistry();
     }
 
     function test_acceptsValidUrl(
@@ -51,7 +51,7 @@ contract SignalsImplicitModeTest is Test {
         attestation.authData.redirectUrl = url;
 
         // Accept the implicit request
-        vm.expectRevert(abi.encodeWithSelector(IImplicitRegistry.InvalidRedirectUrl.selector));
+        vm.expectRevert(abi.encodeWithSelector(IImplicitProjectValidation.InvalidRedirectUrl.selector));
         signalsImplicitMode.acceptImplicitRequest(wallet, attestation, call);
     }
 }

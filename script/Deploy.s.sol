@@ -2,7 +2,7 @@
 pragma solidity ^0.8.27;
 
 import {SingletonDeployer, console} from "erc2470-libs/script/SingletonDeployer.s.sol";
-import {ImplicitRegistry} from "src/registry/ImplicitRegistry.sol";
+import {ImplicitProjectRegistry} from "src/registry/ImplicitProjectRegistry.sol";
 
 contract Deploy is SingletonDeployer {
     function run() external {
@@ -10,7 +10,7 @@ contract Deploy is SingletonDeployer {
 
         bytes32 salt = bytes32(0);
 
-        bytes memory initCode = abi.encodePacked(type(ImplicitRegistry).creationCode);
-        _deployIfNotAlready("ImplicitRegistry", initCode, salt, pk);
+        bytes memory initCode = abi.encodePacked(type(ImplicitProjectRegistry).creationCode);
+        _deployIfNotAlready("ImplicitProjectRegistry", initCode, salt, pk);
     }
 }
