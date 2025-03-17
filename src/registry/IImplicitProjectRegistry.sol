@@ -1,51 +1,57 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.13;
 
-import {IImplicitProjectValidation} from "src/registry/IImplicitProjectValidation.sol";
+import { IImplicitProjectValidation } from "src/registry/IImplicitProjectValidation.sol";
 
 interface IImplicitProjectRegistry is IImplicitProjectValidation {
-    /// @notice Claim a project
-    /// @param projectId The project id
-    function claimProject(bytes32 projectId) external;
 
-    /// @notice Transfer a project
-    /// @param projectId The project id
-    /// @param newOwner The new owner
-    function transferProject(bytes32 projectId, address newOwner) external;
+  /// @notice Claim a project
+  /// @param projectId The project id
+  function claimProject(
+    bytes32 projectId
+  ) external;
 
-    /// @notice Add a project URL
-    /// @param projectId The project id
-    /// @param projectUrl The project URL
-    function addProjectUrl(bytes32 projectId, string memory projectUrl) external;
+  /// @notice Transfer a project
+  /// @param projectId The project id
+  /// @param newOwner The new owner
+  function transferProject(bytes32 projectId, address newOwner) external;
 
-    /// @notice Remove a project URL
-    /// @param projectId The project id
-    /// @param projectUrl The project URL
-    function removeProjectUrl(bytes32 projectId, string memory projectUrl) external;
+  /// @notice Add a project URL
+  /// @param projectId The project id
+  /// @param projectUrl The project URL
+  function addProjectUrl(bytes32 projectId, string memory projectUrl) external;
 
-    /// @notice List project URLs
-    /// @param projectId The project id
-    /// @return projectUrls The project URLs
-    function listProjectUrls(bytes32 projectId) external view returns (bytes32[] memory);
+  /// @notice Remove a project URL
+  /// @param projectId The project id
+  /// @param projectUrl The project URL
+  function removeProjectUrl(bytes32 projectId, string memory projectUrl) external;
 
-    /// @notice Not project owner error
-    error NotProjectOwner();
+  /// @notice List project URLs
+  /// @param projectId The project id
+  /// @return projectUrls The project URLs
+  function listProjectUrls(
+    bytes32 projectId
+  ) external view returns (bytes32[] memory);
 
-    /// @notice Project already claimed error
-    error ProjectAlreadyClaimed();
+  /// @notice Not project owner error
+  error NotProjectOwner();
 
-    /// @notice Project URL not found error
-    error ProjectUrlNotFound();
+  /// @notice Project already claimed error
+  error ProjectAlreadyClaimed();
 
-    /// @notice Emitted when a project is claimed
-    event ProjectClaimed(bytes32 indexed projectId, address indexed owner);
+  /// @notice Project URL not found error
+  error ProjectUrlNotFound();
 
-    /// @notice Emitted when a project owner is transferred
-    event ProjectOwnerTransferred(bytes32 indexed projectId, address indexed newOwner);
+  /// @notice Emitted when a project is claimed
+  event ProjectClaimed(bytes32 indexed projectId, address indexed owner);
 
-    /// @notice Emitted when a project URL is added
-    event ProjectUrlAdded(bytes32 indexed projectId, bytes32 indexed urlHash);
+  /// @notice Emitted when a project owner is transferred
+  event ProjectOwnerTransferred(bytes32 indexed projectId, address indexed newOwner);
 
-    /// @notice Emitted when a project URL is removed
-    event ProjectUrlRemoved(bytes32 indexed projectId, bytes32 indexed urlHash);
+  /// @notice Emitted when a project URL is added
+  event ProjectUrlAdded(bytes32 indexed projectId, bytes32 indexed urlHash);
+
+  /// @notice Emitted when a project URL is removed
+  event ProjectUrlRemoved(bytes32 indexed projectId, bytes32 indexed urlHash);
+
 }
