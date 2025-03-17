@@ -18,8 +18,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          submodules: recursive
-          token: ${{ secrets.SEQUENCE_V3_PAT }}
+          submodules: false
+
+      - name: Use PAT
+        run: |
+          git config --global url."https://${{ secrets.SEQUENCE_V3_PAT }}@github.com/".insteadOf "https://github.com/"
+
+      - name: Download submodules
+        run: |
+          git submodule update --init --recursive
 
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
