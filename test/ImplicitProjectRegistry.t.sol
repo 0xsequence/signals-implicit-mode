@@ -115,6 +115,25 @@ contract ImplicitProjectRegistryTest is Test {
     assertEq(urls.length, 0);
   }
 
+  function test_removeProjectUrlHash(address owner, bytes12 projectIdUpper, bytes32 urlHash) public {
+    vm.assume(owner != address(0));
+
+    bytes32 projectId = _projectId(projectIdUpper, owner);
+
+    vm.startPrank(owner);
+    registry.claimProject(projectIdUpper);
+    registry.addProjectUrlHash(projectId, urlHash);
+
+    vm.expectEmit();
+    emit IImplicitProjectRegistry.ProjectUrlRemoved(projectId, urlHash);
+
+    registry.removeProjectUrlHash(projectId, urlHash);
+    vm.stopPrank();
+
+    bytes32[] memory urls = registry.listProjectUrls(projectId);
+    assertEq(urls.length, 0);
+  }
+
   function test_validateAttestationSingle(
     address owner,
     address wallet,
