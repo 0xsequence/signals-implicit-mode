@@ -52,6 +52,9 @@ contract ImplicitProjectRegistry is IImplicitProjectRegistry {
   /// @param projectId The project id
   /// @param projectUrlHash The project URL hash
   function addProjectUrlHash(bytes32 projectId, bytes32 projectUrlHash) public onlyProjectOwner(projectId) {
+    if (isProjectUrl[projectId][projectUrlHash]) {
+      revert IImplicitProjectRegistry.ProjectUrlAlreadyExists();
+    }
     isProjectUrl[projectId][projectUrlHash] = true;
     projectUrlsList[projectId].push(projectUrlHash);
     emit IImplicitProjectRegistry.ProjectUrlAdded(projectId, projectUrlHash);
@@ -59,9 +62,7 @@ contract ImplicitProjectRegistry is IImplicitProjectRegistry {
 
   /// @inheritdoc IImplicitProjectRegistry
   function addProjectUrl(bytes32 projectId, string memory projectUrl) public onlyProjectOwner(projectId) {
-    isProjectUrl[projectId][_hashUrl(projectUrl)] = true;
-    projectUrlsList[projectId].push(_hashUrl(projectUrl));
-    emit IImplicitProjectRegistry.ProjectUrlAdded(projectId, _hashUrl(projectUrl));
+    addProjectUrlHash(projectId, _hashUrl(projectUrl));
   }
 
   /// @notice Remove a project URL hash

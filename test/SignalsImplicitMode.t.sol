@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.13;
 
+import { TestHelper } from "./TestHelper.sol";
 import { SignalsImplicitModeMock } from "./mock/SignalsImplicitModeMock.sol";
 import { Test, console } from "forge-std/Test.sol";
 
@@ -10,7 +11,7 @@ import { ImplicitProjectRegistry } from "src/registry/ImplicitProjectRegistry.so
 import { Attestation, LibAttestation } from "sequence-v3/src/extensions/sessions/implicit/Attestation.sol";
 import { Payload } from "sequence-v3/src/modules/Payload.sol";
 
-contract SignalsImplicitModeTest is Test {
+contract SignalsImplicitModeTest is Test, TestHelper {
 
   using LibAttestation for Attestation;
 
@@ -62,6 +63,7 @@ contract SignalsImplicitModeTest is Test {
         mstore(urls, 10)
       }
     }
+    urls = _deduplicateStringArray(urls);
     urlIdx = bound(urlIdx, 0, urls.length - 1);
 
     attestation.authData.redirectUrl = urls[urlIdx];

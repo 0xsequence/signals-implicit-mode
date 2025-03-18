@@ -43,6 +43,9 @@ interface IImplicitProjectRegistry is IImplicitProjectValidation {
   /// @notice Project URL not found error
   error ProjectUrlNotFound();
 
+  /// @notice Project URL already exists error
+  error ProjectUrlAlreadyExists();
+
   /// @notice Emitted when a project is claimed
   event ProjectClaimed(bytes32 indexed projectId, address indexed owner);
 

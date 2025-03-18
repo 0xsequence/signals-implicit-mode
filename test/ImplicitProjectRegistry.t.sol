@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.13;
 
+import { TestHelper } from "./TestHelper.sol";
 import { SignalsImplicitModeMock } from "./mock/SignalsImplicitModeMock.sol";
 import { Test, console } from "forge-std/Test.sol";
 
@@ -10,7 +11,7 @@ import { ImplicitProjectRegistry } from "src/registry/ImplicitProjectRegistry.so
 
 import { Attestation, LibAttestation } from "sequence-v3/src/extensions/sessions/implicit/Attestation.sol";
 
-contract ImplicitProjectRegistryTest is Test {
+contract ImplicitProjectRegistryTest is Test, TestHelper {
 
   using LibAttestation for Attestation;
 
@@ -74,6 +75,7 @@ contract ImplicitProjectRegistryTest is Test {
     registry.addProjectUrl(projectId, url);
 
     bytes32[] memory urls = registry.listProjectUrls(projectId);
+    urls = _deduplicateBytes32Array(urls);
     assertEq(urls[0], _hashUrl(url));
   }
 
@@ -95,43 +97,76 @@ contract ImplicitProjectRegistryTest is Test {
     assertEq(urls[0], urlHash);
   }
 
-  function test_removeProjectUrl(address owner, bytes12 projectIdUpper, string memory url) public {
+  function test_removeProjectUrl(address owner, bytes12 projectIdUpper, string[] memory urls, uint256 urlIdx) public {
     vm.assume(owner != address(0));
-    vm.assume(bytes(url).length > 0);
+    vm.assume(urls.length > 0);
+    // Max 10 urls
+    if (urls.length > 10) {
+      assembly {
+        mstore(urls, 10)
+      }
+    }
+    urls = _deduplicateStringArray(urls);
+    urlIdx = bound(urlIdx, 0, urls.length - 1);
 
     bytes32 projectId = _projectId(projectIdUpper, owner);
 
     vm.startPrank(owner);
     registry.claimProject(projectIdUpper);
-    registry.addProjectUrl(projectId, url);
+    for (uint256 i; i < urls.length; i++) {
+      registry.addProjectUrl(projectId, urls[i]);
+    }
 
-    vm.expectEmit();
-    emit IImplicitProjectRegistry.ProjectUrlRemoved(projectId, _hashUrl(url));
-
-    registry.removeProjectUrl(projectId, url);
-    vm.stopPrank();
-
-    bytes32[] memory urls = registry.listProjectUrls(projectId);
-    assertEq(urls.length, 0);
-  }
-
-  function test_removeProjectUrlHash(address owner, bytes12 projectIdUpper, bytes32 urlHash) public {
-    vm.assume(owner != address(0));
-
-    bytes32 projectId = _projectId(projectIdUpper, owner);
-
-    vm.startPrank(owner);
-    registry.claimProject(projectIdUpper);
-    registry.addProjectUrlHash(projectId, urlHash);
-
+    bytes32 urlHash = _hashUrl(urls[urlIdx]);
     vm.expectEmit();
     emit IImplicitProjectRegistry.ProjectUrlRemoved(projectId, urlHash);
 
-    registry.removeProjectUrlHash(projectId, urlHash);
+    registry.removeProjectUrl(projectId, urls[urlIdx]);
+    vm.stopPrank();
+
+    bytes32[] memory actualUrls = registry.listProjectUrls(projectId);
+    assertEq(actualUrls.length, urls.length - 1);
+    for (uint256 i; i < actualUrls.length; i++) {
+      assertNotEq(actualUrls[i], urlHash);
+    }
+  }
+
+  function test_removeProjectUrlHash(
+    address owner,
+    bytes12 projectIdUpper,
+    bytes32[] memory urlHashes,
+    uint256 urlHashIdx
+  ) public {
+    vm.assume(owner != address(0));
+    vm.assume(urlHashes.length > 0);
+    // Max 10 urls
+    if (urlHashes.length > 10) {
+      assembly {
+        mstore(urlHashes, 10)
+      }
+    }
+    urlHashes = _deduplicateBytes32Array(urlHashes);
+    urlHashIdx = bound(urlHashIdx, 0, urlHashes.length - 1);
+
+    bytes32 projectId = _projectId(projectIdUpper, owner);
+
+    vm.startPrank(owner);
+    registry.claimProject(projectIdUpper);
+    for (uint256 i; i < urlHashes.length; i++) {
+      registry.addProjectUrlHash(projectId, urlHashes[i]);
+    }
+
+    vm.expectEmit();
+    emit IImplicitProjectRegistry.ProjectUrlRemoved(projectId, urlHashes[urlHashIdx]);
+
+    registry.removeProjectUrlHash(projectId, urlHashes[urlHashIdx]);
     vm.stopPrank();
 
     bytes32[] memory urls = registry.listProjectUrls(projectId);
-    assertEq(urls.length, 0);
+    assertEq(urls.length, urlHashes.length - 1);
+    for (uint256 i; i < urls.length; i++) {
+      assertNotEq(urls[i], urlHashes[urlHashIdx]);
+    }
   }
 
   function test_validateAttestationSingle(
@@ -172,6 +207,7 @@ contract ImplicitProjectRegistryTest is Test {
         mstore(urls, 10)
       }
     }
+    urls = _deduplicateStringArray(urls);
     urlIdx = bound(urlIdx, 0, urls.length - 1);
 
     bytes32 projectId = _projectId(projectIdUpper, owner);
@@ -241,6 +277,59 @@ contract ImplicitProjectRegistryTest is Test {
     registry.addProjectUrl(projectId, url);
   }
 
+  function test_fail_addProjectUrlAlreadyExists(address owner, bytes12 projectIdUpper, string memory url) public {
+    vm.assume(owner != address(0));
+    vm.assume(bytes(url).length > 0);
+
+    vm.startPrank(owner);
+    bytes32 projectId = registry.claimProject(projectIdUpper);
+    registry.addProjectUrl(projectId, url);
+
+    vm.expectRevert(IImplicitProjectRegistry.ProjectUrlAlreadyExists.selector);
+    registry.addProjectUrl(projectId, url);
+    vm.stopPrank();
+  }
+
+  function test_fail_addProjectUrlHashAlreadyExists(address owner, bytes12 projectIdUpper, bytes32 urlHash) public {
+    vm.assume(owner != address(0));
+
+    vm.startPrank(owner);
+    bytes32 projectId = registry.claimProject(projectIdUpper);
+    registry.addProjectUrlHash(projectId, urlHash);
+
+    vm.expectRevert(IImplicitProjectRegistry.ProjectUrlAlreadyExists.selector);
+    registry.addProjectUrlHash(projectId, urlHash);
+    vm.stopPrank();
+  }
+
+  function test_fail_addProjectUrlAlreadyExistsHash(address owner, bytes12 projectIdUpper, string memory url) public {
+    vm.assume(owner != address(0));
+
+    vm.startPrank(owner);
+    bytes32 projectId = registry.claimProject(projectIdUpper);
+    registry.addProjectUrlHash(projectId, _hashUrl(url));
+
+    vm.expectRevert(IImplicitProjectRegistry.ProjectUrlAlreadyExists.selector);
+    registry.addProjectUrl(projectId, url);
+    vm.stopPrank();
+  }
+
+  function test_fail_addProjectUrlHashAlreadyExistsFull(
+    address owner,
+    bytes12 projectIdUpper,
+    string memory url
+  ) public {
+    vm.assume(owner != address(0));
+
+    vm.startPrank(owner);
+    bytes32 projectId = registry.claimProject(projectIdUpper);
+    registry.addProjectUrl(projectId, url);
+
+    vm.expectRevert(IImplicitProjectRegistry.ProjectUrlAlreadyExists.selector);
+    registry.addProjectUrlHash(projectId, _hashUrl(url));
+    vm.stopPrank();
+  }
+
   function test_fail_removeNonexistentUrl(address owner, bytes12 projectIdUpper, string memory url) public {
     vm.assume(owner != address(0));
     vm.assume(bytes(url).length > 0);
@@ -279,17 +368,6 @@ contract ImplicitProjectRegistryTest is Test {
 
     vm.expectRevert(IImplicitProjectValidation.InvalidRedirectUrl.selector);
     registry.validateAttestation(wallet, attestation, projectId);
-  }
-
-  // Helper function
-  function _hashUrl(
-    string memory url
-  ) internal pure returns (bytes32) {
-    return keccak256(abi.encodePacked(url));
-  }
-
-  function _projectId(bytes12 projectIdUpper, address owner) internal pure returns (bytes32 projectId) {
-    projectId = bytes32(uint256(bytes32(projectIdUpper)) << 160 | uint160(owner));
   }
 
 }
