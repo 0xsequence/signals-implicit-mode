@@ -115,7 +115,12 @@ contract ImplicitProjectRegistryTest is Test {
     assertEq(urls.length, 0);
   }
 
-  function test_validateAttestation(address owner, address wallet, bytes12 projectIdUpper, string memory url) public {
+  function test_validateAttestationSingle(
+    address owner,
+    address wallet,
+    bytes12 projectIdUpper,
+    string memory url
+  ) public {
     vm.assume(owner != address(0) && wallet != address(0));
     vm.assume(bytes(url).length > 0);
 
@@ -124,10 +129,43 @@ contract ImplicitProjectRegistryTest is Test {
     Attestation memory attestation;
     attestation.authData.redirectUrl = url;
 
-    vm.prank(owner);
+    vm.startPrank(owner);
     registry.claimProject(projectIdUpper);
-    vm.prank(owner);
     registry.addProjectUrl(projectId, url);
+    vm.stopPrank();
+
+    bytes32 magic = registry.validateAttestation(wallet, attestation, projectId);
+    assertEq(magic, attestation.generateImplicitRequestMagic(wallet));
+  }
+
+  function test_validateAttestationMultiple(
+    address owner,
+    address wallet,
+    bytes12 projectIdUpper,
+    string[] memory urls,
+    uint256 urlIdx
+  ) public {
+    vm.assume(owner != address(0) && wallet != address(0));
+    vm.assume(urls.length > 0);
+    // Max 10 urls
+    if (urls.length > 10) {
+      assembly {
+        mstore(urls, 10)
+      }
+    }
+    urlIdx = bound(urlIdx, 0, urls.length - 1);
+
+    bytes32 projectId = _projectId(projectIdUpper, owner);
+
+    Attestation memory attestation;
+    attestation.authData.redirectUrl = urls[urlIdx];
+
+    vm.startPrank(owner);
+    registry.claimProject(projectIdUpper);
+    for (uint256 i; i < urls.length; i++) {
+      registry.addProjectUrl(projectId, urls[i]);
+    }
+    vm.stopPrank();
 
     bytes32 magic = registry.validateAttestation(wallet, attestation, projectId);
     assertEq(magic, attestation.generateImplicitRequestMagic(wallet));

@@ -46,6 +46,43 @@ contract SignalsImplicitModeTest is Test {
     assertEq(actualMagic, expectedMagic);
   }
 
+  function test_acceptsValidUrlFromMultiple(
+    bytes12 projectIdUpper,
+    address owner,
+    string[] memory urls,
+    uint256 urlIdx,
+    Attestation memory attestation,
+    address wallet,
+    Payload.Call memory call
+  ) public {
+    vm.assume(urls.length > 0);
+    // Max 10 urls
+    if (urls.length > 10) {
+      assembly {
+        mstore(urls, 10)
+      }
+    }
+    urlIdx = bound(urlIdx, 0, urls.length - 1);
+
+    attestation.authData.redirectUrl = urls[urlIdx];
+
+    // Claim the project and add the url
+    vm.startPrank(owner);
+    bytes32 projectId = registry.claimProject(projectIdUpper);
+    for (uint256 i; i < urls.length; i++) {
+      registry.addProjectUrl(projectId, urls[i]);
+    }
+    vm.stopPrank();
+
+    // Initialize the signals implicit mode
+    signalsImplicitMode = new SignalsImplicitModeMock(address(registry), projectId);
+
+    // Accept the implicit request
+    bytes32 expectedMagic = attestation.generateImplicitRequestMagic(wallet);
+    bytes32 actualMagic = signalsImplicitMode.acceptImplicitRequest(wallet, attestation, call);
+    assertEq(actualMagic, expectedMagic);
+  }
+
   function test_rejectsInvalidUrl(
     bytes32 projectId,
     string memory url,
