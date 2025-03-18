@@ -265,7 +265,6 @@ contract ImplicitProjectRegistryTest is Test, TestHelper {
     string memory url
   ) public {
     vm.assume(owner != address(0) && nonOwner != address(0) && owner != nonOwner);
-    vm.assume(bytes(url).length > 0);
 
     bytes32 projectId = _projectId(projectIdUpper, owner);
 
@@ -275,6 +274,60 @@ contract ImplicitProjectRegistryTest is Test, TestHelper {
     vm.expectRevert(IImplicitProjectRegistry.NotProjectOwner.selector);
     vm.prank(nonOwner);
     registry.addProjectUrl(projectId, url);
+  }
+
+  function test_fail_addProjectUrlHashByNonOwner(
+    address owner,
+    address nonOwner,
+    bytes12 projectIdUpper,
+    bytes32 urlHash
+  ) public {
+    vm.assume(owner != address(0) && nonOwner != address(0) && owner != nonOwner);
+
+    bytes32 projectId = _projectId(projectIdUpper, owner);
+
+    vm.prank(owner);
+    registry.claimProject(projectIdUpper);
+
+    vm.expectRevert(IImplicitProjectRegistry.NotProjectOwner.selector);
+    vm.prank(nonOwner);
+    registry.addProjectUrlHash(projectId, urlHash);
+  }
+
+  function test_fail_removeProjectUrlByNonOwner(
+    address owner,
+    address nonOwner,
+    bytes12 projectIdUpper,
+    string memory url
+  ) public {
+    vm.assume(owner != address(0) && nonOwner != address(0) && owner != nonOwner);
+
+    bytes32 projectId = _projectId(projectIdUpper, owner);
+
+    vm.prank(owner);
+    registry.claimProject(projectIdUpper);
+
+    vm.expectRevert(IImplicitProjectRegistry.NotProjectOwner.selector);
+    vm.prank(nonOwner);
+    registry.removeProjectUrl(projectId, url);
+  }
+
+  function test_fail_removeProjectUrlHashByNonOwner(
+    address owner,
+    address nonOwner,
+    bytes12 projectIdUpper,
+    bytes32 urlHash
+  ) public {
+    vm.assume(owner != address(0) && nonOwner != address(0) && owner != nonOwner);
+
+    bytes32 projectId = _projectId(projectIdUpper, owner);
+
+    vm.prank(owner);
+    registry.claimProject(projectIdUpper);
+
+    vm.expectRevert(IImplicitProjectRegistry.NotProjectOwner.selector);
+    vm.prank(nonOwner);
+    registry.removeProjectUrlHash(projectId, urlHash, 0);
   }
 
   function test_fail_addProjectUrlAlreadyExists(address owner, bytes12 projectIdUpper, string memory url) public {
@@ -342,6 +395,50 @@ contract ImplicitProjectRegistryTest is Test, TestHelper {
     vm.expectRevert(IImplicitProjectRegistry.ProjectUrlNotFound.selector);
     vm.prank(owner);
     registry.removeProjectUrl(projectId, url);
+  }
+
+  function test_fail_removeNonexistentUrlHash(address owner, bytes12 projectIdUpper, bytes32 urlHash) public {
+    vm.assume(owner != address(0));
+
+    bytes32 projectId = _projectId(projectIdUpper, owner);
+
+    vm.prank(owner);
+    registry.claimProject(projectIdUpper);
+
+    vm.expectRevert(IImplicitProjectRegistry.ProjectUrlNotFound.selector);
+    vm.prank(owner);
+    registry.removeProjectUrlHash(projectId, urlHash, 0);
+  }
+
+  function test_fail_removeUrlHashWrongIndex(
+    address owner,
+    bytes12 projectIdUpper,
+    bytes32[] memory urlHashes,
+    uint256 urlHashIdx
+  ) public {
+    vm.assume(owner != address(0));
+    vm.assume(urlHashes.length > 0);
+    // Max 10 urls
+    if (urlHashes.length > 10) {
+      assembly {
+        mstore(urlHashes, 10)
+      }
+    }
+    urlHashes = _deduplicateBytes32Array(urlHashes);
+    urlHashIdx = bound(urlHashIdx, 0, urlHashes.length - 1);
+
+    bytes32 projectId = _projectId(projectIdUpper, owner);
+
+    vm.startPrank(owner);
+    registry.claimProject(projectIdUpper);
+    for (uint256 i; i < urlHashes.length; i++) {
+      registry.addProjectUrlHash(projectId, urlHashes[i]);
+    }
+    vm.stopPrank();
+
+    vm.expectRevert(IImplicitProjectRegistry.InvalidProjectUrlIndex.selector);
+    vm.prank(owner);
+    registry.removeProjectUrlHash(projectId, urlHashes[urlHashIdx], urlHashIdx + 1);
   }
 
   function test_fail_validateAttestationWithInvalidUrl(

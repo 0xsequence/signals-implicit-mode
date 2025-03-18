@@ -49,3 +49,13 @@ jobs:
         run: |
           forge test -vvv
         id: test
+
+      - name: Run Coverage report
+        run: |
+          forge coverage --no-match-coverage script
+        id: coverage
+
+      - name: Run Forge snapshot
+        run: |
+          forge snapshot --check
+        id: snapshot
