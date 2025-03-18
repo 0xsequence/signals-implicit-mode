@@ -21,10 +21,10 @@ To claim your project ID, call the `claimProject(bytes12 projectIdUpper)` functi
 > [!TIP]
 > Consider claiming your project ID on every chain you wish to support. Claiming a project ID does not imply you must use it.
 
-As the project owner, you can:
+A the project admin, you can:
 - Add supported redirect URLs by calling `addProjectUrl(bytes32 projectId, string memory projectUrl)`
 - Remove URLs using `removeProjectUrl(bytes32 projectId, string memory projectUrl)`
-- Transfer project ownership using `transferProject(bytes32 projectId, address newOwner)`
+- Add or remove admins using `addAdmin(bytes32 projectId, address admin)` and `removeAdmin(bytes32 projectId, address admin)`
 
 Anyone can list all project URLs using `listProjectUrls(bytes32 projectId)`.
 
