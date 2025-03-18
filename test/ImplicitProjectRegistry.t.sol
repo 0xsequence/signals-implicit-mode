@@ -24,8 +24,6 @@ contract ImplicitProjectRegistryTest is Test, TestHelper {
   // Positive Tests
 
   function test_claimProject(address admin, bytes12 projectIdUpper) public {
-    vm.assume(admin != address(0));
-
     bytes32 projectId = _projectId(projectIdUpper, admin);
 
     vm.expectEmit();
@@ -38,7 +36,7 @@ contract ImplicitProjectRegistryTest is Test, TestHelper {
   }
 
   function test_addAdmin(address initialAdmin, address newAdmin, bytes12 projectIdUpper) public {
-    vm.assume(initialAdmin != address(0) && newAdmin != address(0) && initialAdmin != newAdmin);
+    vm.assume(initialAdmin != newAdmin);
 
     bytes32 projectId = _projectId(projectIdUpper, initialAdmin);
 
@@ -60,7 +58,7 @@ contract ImplicitProjectRegistryTest is Test, TestHelper {
   }
 
   function test_removeAdmin(address initialAdmin, address secondAdmin, bytes12 projectIdUpper) public {
-    vm.assume(initialAdmin != address(0) && secondAdmin != address(0) && initialAdmin != secondAdmin);
+    vm.assume(initialAdmin != secondAdmin);
 
     bytes32 projectId = _projectId(projectIdUpper, initialAdmin);
 
@@ -79,7 +77,6 @@ contract ImplicitProjectRegistryTest is Test, TestHelper {
   }
 
   function test_addProjectUrl(address admin, bytes12 projectIdUpper, string memory url) public {
-    vm.assume(admin != address(0));
     vm.assume(bytes(url).length > 0);
 
     bytes32 projectId = _projectId(projectIdUpper, admin);
@@ -99,8 +96,6 @@ contract ImplicitProjectRegistryTest is Test, TestHelper {
   }
 
   function test_addProjectUrlHash(address admin, bytes12 projectIdUpper, bytes32 urlHash) public {
-    vm.assume(admin != address(0));
-
     bytes32 projectId = _projectId(projectIdUpper, admin);
 
     vm.prank(admin);
@@ -117,7 +112,6 @@ contract ImplicitProjectRegistryTest is Test, TestHelper {
   }
 
   function test_removeProjectUrl(address admin, bytes12 projectIdUpper, string[] memory urls, uint256 urlIdx) public {
-    vm.assume(admin != address(0));
     vm.assume(urls.length > 0);
     // Max 10 urls
     if (urls.length > 10) {
@@ -156,7 +150,6 @@ contract ImplicitProjectRegistryTest is Test, TestHelper {
     bytes32[] memory urlHashes,
     uint256 urlHashIdx
   ) public {
-    vm.assume(admin != address(0));
     vm.assume(urlHashes.length > 0);
     // Max 10 urls
     if (urlHashes.length > 10) {
@@ -194,7 +187,6 @@ contract ImplicitProjectRegistryTest is Test, TestHelper {
     bytes12 projectIdUpper,
     string memory url
   ) public {
-    vm.assume(admin != address(0) && wallet != address(0));
     vm.assume(bytes(url).length > 0);
 
     bytes32 projectId = _projectId(projectIdUpper, admin);
@@ -218,7 +210,6 @@ contract ImplicitProjectRegistryTest is Test, TestHelper {
     string[] memory urls,
     uint256 urlIdx
   ) public {
-    vm.assume(admin != address(0) && wallet != address(0));
     vm.assume(urls.length > 0);
     // Max 10 urls
     if (urls.length > 10) {
@@ -248,8 +239,6 @@ contract ImplicitProjectRegistryTest is Test, TestHelper {
   // Negative Tests
 
   function test_fail_claimProjectTwice(address admin, bytes12 projectIdUpper) public {
-    vm.assume(admin != address(0));
-
     bytes32 projectId = _projectId(projectIdUpper, admin);
 
     vm.startPrank(admin);
@@ -269,8 +258,7 @@ contract ImplicitProjectRegistryTest is Test, TestHelper {
     address newAdmin,
     bytes12 projectIdUpper
   ) public {
-    vm.assume(admin != address(0) && nonAdmin != address(0) && newAdmin != address(0));
-    vm.assume(admin != nonAdmin && admin != newAdmin && nonAdmin != newAdmin);
+    vm.assume(admin != nonAdmin && admin != newAdmin);
 
     bytes32 projectId = _projectId(projectIdUpper, admin);
 
@@ -325,7 +313,7 @@ contract ImplicitProjectRegistryTest is Test, TestHelper {
     bytes12 projectIdUpper,
     string memory url
   ) public {
-    vm.assume(admin != address(0) && nonAdmin != address(0) && admin != nonAdmin);
+    vm.assume(admin != nonAdmin);
 
     bytes32 projectId = _projectId(projectIdUpper, admin);
 
@@ -343,7 +331,7 @@ contract ImplicitProjectRegistryTest is Test, TestHelper {
     bytes12 projectIdUpper,
     bytes32 urlHash
   ) public {
-    vm.assume(admin != address(0) && nonAdmin != address(0) && admin != nonAdmin);
+    vm.assume(admin != nonAdmin);
 
     bytes32 projectId = _projectId(projectIdUpper, admin);
 
@@ -361,7 +349,7 @@ contract ImplicitProjectRegistryTest is Test, TestHelper {
     bytes12 projectIdUpper,
     string memory url
   ) public {
-    vm.assume(admin != address(0) && nonAdmin != address(0) && admin != nonAdmin);
+    vm.assume(admin != nonAdmin);
 
     bytes32 projectId = _projectId(projectIdUpper, admin);
 
@@ -379,7 +367,7 @@ contract ImplicitProjectRegistryTest is Test, TestHelper {
     bytes12 projectIdUpper,
     bytes32 urlHash
   ) public {
-    vm.assume(admin != address(0) && nonAdmin != address(0) && admin != nonAdmin);
+    vm.assume(admin != nonAdmin);
 
     bytes32 projectId = _projectId(projectIdUpper, admin);
 
@@ -392,7 +380,6 @@ contract ImplicitProjectRegistryTest is Test, TestHelper {
   }
 
   function test_fail_addProjectUrlAlreadyExists(address admin, bytes12 projectIdUpper, string memory url) public {
-    vm.assume(admin != address(0));
     vm.assume(bytes(url).length > 0);
 
     vm.startPrank(admin);
@@ -405,8 +392,6 @@ contract ImplicitProjectRegistryTest is Test, TestHelper {
   }
 
   function test_fail_addProjectUrlHashAlreadyExists(address admin, bytes12 projectIdUpper, bytes32 urlHash) public {
-    vm.assume(admin != address(0));
-
     vm.startPrank(admin);
     bytes32 projectId = registry.claimProject(projectIdUpper);
     registry.addProjectUrlHash(projectId, urlHash);
@@ -417,8 +402,6 @@ contract ImplicitProjectRegistryTest is Test, TestHelper {
   }
 
   function test_fail_addProjectUrlAlreadyExistsHash(address admin, bytes12 projectIdUpper, string memory url) public {
-    vm.assume(admin != address(0));
-
     vm.startPrank(admin);
     bytes32 projectId = registry.claimProject(projectIdUpper);
     registry.addProjectUrlHash(projectId, _hashUrl(url));
@@ -433,8 +416,6 @@ contract ImplicitProjectRegistryTest is Test, TestHelper {
     bytes12 projectIdUpper,
     string memory url
   ) public {
-    vm.assume(admin != address(0));
-
     vm.startPrank(admin);
     bytes32 projectId = registry.claimProject(projectIdUpper);
     registry.addProjectUrl(projectId, url);
@@ -445,7 +426,6 @@ contract ImplicitProjectRegistryTest is Test, TestHelper {
   }
 
   function test_fail_removeNonexistentUrl(address admin, bytes12 projectIdUpper, string memory url) public {
-    vm.assume(admin != address(0));
     vm.assume(bytes(url).length > 0);
 
     bytes32 projectId = _projectId(projectIdUpper, admin);
@@ -459,8 +439,6 @@ contract ImplicitProjectRegistryTest is Test, TestHelper {
   }
 
   function test_fail_removeNonexistentUrlHash(address admin, bytes12 projectIdUpper, bytes32 urlHash) public {
-    vm.assume(admin != address(0));
-
     bytes32 projectId = _projectId(projectIdUpper, admin);
 
     vm.prank(admin);
@@ -477,7 +455,6 @@ contract ImplicitProjectRegistryTest is Test, TestHelper {
     bytes32[] memory urlHashes,
     uint256 urlHashIdx
   ) public {
-    vm.assume(admin != address(0));
     vm.assume(urlHashes.length > 0);
     // Max 10 urls
     if (urlHashes.length > 10) {
@@ -509,7 +486,6 @@ contract ImplicitProjectRegistryTest is Test, TestHelper {
     string memory validUrl,
     string memory invalidUrl
   ) public {
-    vm.assume(admin != address(0) && wallet != address(0));
     vm.assume(bytes(validUrl).length > 0 && bytes(invalidUrl).length > 0);
     vm.assume(keccak256(bytes(validUrl)) != keccak256(bytes(invalidUrl)));
 
