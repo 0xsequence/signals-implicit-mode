@@ -68,25 +68,35 @@ contract ImplicitProjectRegistry is IImplicitProjectRegistry {
   /// @notice Remove a project URL hash
   /// @param projectId The project id
   /// @param projectUrlHash The project URL hash
-  function removeProjectUrlHash(bytes32 projectId, bytes32 projectUrlHash) public onlyProjectOwner(projectId) {
+  /// @param urlIdx The index of the project URL hash to remove
+  function removeProjectUrlHash(
+    bytes32 projectId,
+    bytes32 projectUrlHash,
+    uint256 urlIdx
+  ) public onlyProjectOwner(projectId) {
     if (!isProjectUrl[projectId][projectUrlHash]) {
       revert IImplicitProjectRegistry.ProjectUrlNotFound();
     }
-    isProjectUrl[projectId][projectUrlHash] = false;
-    uint256 length = projectUrlsList[projectId].length;
-    for (uint256 i; i < length; i++) {
-      if (projectUrlsList[projectId][i] == projectUrlHash) {
-        projectUrlsList[projectId][i] = projectUrlsList[projectId][length - 1];
-        projectUrlsList[projectId].pop();
-        break;
-      }
+    if (urlIdx >= projectUrlsList[projectId].length || projectUrlsList[projectId][urlIdx] != projectUrlHash) {
+      revert IImplicitProjectRegistry.InvalidProjectUrlIndex();
     }
+    isProjectUrl[projectId][projectUrlHash] = false;
+    projectUrlsList[projectId][urlIdx] = projectUrlsList[projectId][projectUrlsList[projectId].length - 1];
+    projectUrlsList[projectId].pop();
     emit IImplicitProjectRegistry.ProjectUrlRemoved(projectId, projectUrlHash);
   }
 
   /// @inheritdoc IImplicitProjectRegistry
   function removeProjectUrl(bytes32 projectId, string memory projectUrl) public onlyProjectOwner(projectId) {
-    removeProjectUrlHash(projectId, _hashUrl(projectUrl));
+    // Find the index of the project URL hash
+    bytes32 projectUrlHash = _hashUrl(projectUrl);
+    for (uint256 i; i < projectUrlsList[projectId].length; i++) {
+      if (projectUrlsList[projectId][i] == projectUrlHash) {
+        removeProjectUrlHash(projectId, projectUrlHash, i);
+        return;
+      }
+    }
+    revert IImplicitProjectRegistry.ProjectUrlNotFound();
   }
 
   /// @inheritdoc IImplicitProjectRegistry

@@ -159,7 +159,7 @@ contract ImplicitProjectRegistryTest is Test, TestHelper {
     vm.expectEmit();
     emit IImplicitProjectRegistry.ProjectUrlRemoved(projectId, urlHashes[urlHashIdx]);
 
-    registry.removeProjectUrlHash(projectId, urlHashes[urlHashIdx]);
+    registry.removeProjectUrlHash(projectId, urlHashes[urlHashIdx], urlHashIdx);
     vm.stopPrank();
 
     bytes32[] memory urls = registry.listProjectUrls(projectId);
