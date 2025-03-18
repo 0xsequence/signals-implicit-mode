@@ -12,14 +12,21 @@ See below *Support Implicit Sessions* for information on how to integrate with t
 
 ### Register Your Project URLs
 
-Select your `Project ID`. This can be any `bytes32`. Check the current registry to ensure there is no collision with an existing project. 
+Select your `Project ID`. The project ID is composed of two parts:
+- A 12-byte (24 hex characters) upper portion that you choose
+- Your address as the lower 20 bytes
 
-To claim your project ID, call the `claimProject(bytes32 projectId)` function.
+To claim your project ID, call the `claimProject(bytes12 projectIdUpper)` function. The contract will automatically combine your chosen upper portion with your address to create the full project ID.
 
 > [!TIP]
 > Consider claiming your project ID on every chain you wish to support. Claiming a project ID does not imply you must use it.
 
-Add supported redirect URLs by calling the `addProjectUrl(bytes32 projectId, string memory projectUrl)` function. 
+As the project owner, you can:
+- Add supported redirect URLs by calling `addProjectUrl(bytes32 projectId, string memory projectUrl)`
+- Remove URLs using `removeProjectUrl(bytes32 projectId, string memory projectUrl)`
+- Transfer project ownership using `transferProject(bytes32 projectId, address newOwner)`
+
+Anyone can list all project URLs using `listProjectUrls(bytes32 projectId)`.
 
 Integrate your contracts with the registry using your project ID as described in the next section.
 
@@ -56,7 +63,7 @@ forge test
 ## Deploy Contracts
 
 > [!NOTE]
-> This will deploy the `ImplicitProjectRegistry`. Deployments use ERC-2470 for counter factual deployments and will deploy to `0x18e351c182462168BA271aAeff55715CeccD0B65`.
+> This will deploy the `ImplicitProjectRegistry`. Deployments use ERC-2470 for counter factual deployments and will deploy to `0x88132015f17526dA2119F1Efb8BAC818b2CcA2Eb`.
 
 > [!TIP]
 > The `ImplicitProjectRegistry` is ownerless and so you are free to use an implementation and claim any `projectId`. You do not need to deploy your own instance.
