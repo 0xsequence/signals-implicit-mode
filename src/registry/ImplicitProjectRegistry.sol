@@ -13,7 +13,8 @@ contract ImplicitProjectRegistry is IImplicitProjectRegistry {
   mapping(bytes32 => address) public projectOwner;
 
   /// @notice Project URLs
-  mapping(bytes32 => bytes32[]) public projectUrls;
+  mapping(bytes32 => mapping(bytes32 => bool)) public isProjectUrl;
+  mapping(bytes32 => bytes32[]) public projectUrlsList;
 
   modifier onlyProjectOwner(
     bytes32 projectId
@@ -51,13 +52,15 @@ contract ImplicitProjectRegistry is IImplicitProjectRegistry {
   /// @param projectId The project id
   /// @param projectUrlHash The project URL hash
   function addProjectUrlHash(bytes32 projectId, bytes32 projectUrlHash) public onlyProjectOwner(projectId) {
-    projectUrls[projectId].push(projectUrlHash);
+    isProjectUrl[projectId][projectUrlHash] = true;
+    projectUrlsList[projectId].push(projectUrlHash);
     emit IImplicitProjectRegistry.ProjectUrlAdded(projectId, projectUrlHash);
   }
 
   /// @inheritdoc IImplicitProjectRegistry
   function addProjectUrl(bytes32 projectId, string memory projectUrl) public onlyProjectOwner(projectId) {
-    projectUrls[projectId].push(_hashUrl(projectUrl));
+    isProjectUrl[projectId][_hashUrl(projectUrl)] = true;
+    projectUrlsList[projectId].push(_hashUrl(projectUrl));
     emit IImplicitProjectRegistry.ProjectUrlAdded(projectId, _hashUrl(projectUrl));
   }
 
@@ -65,24 +68,19 @@ contract ImplicitProjectRegistry is IImplicitProjectRegistry {
   /// @param projectId The project id
   /// @param projectUrlHash The project URL hash
   function removeProjectUrlHash(bytes32 projectId, bytes32 projectUrlHash) public onlyProjectOwner(projectId) {
-    bytes32[] storage urls = projectUrls[projectId];
-    uint256 length = urls.length;
-
-    if (length == 0) {
+    if (!isProjectUrl[projectId][projectUrlHash]) {
       revert IImplicitProjectRegistry.ProjectUrlNotFound();
     }
-
-    // Find and remove the URL by replacing it with the last element
+    isProjectUrl[projectId][projectUrlHash] = false;
+    uint256 length = projectUrlsList[projectId].length;
     for (uint256 i; i < length; i++) {
-      if (urls[i] == projectUrlHash) {
-        urls[i] = urls[length - 1];
-        urls.pop();
-        emit IImplicitProjectRegistry.ProjectUrlRemoved(projectId, projectUrlHash);
-        return;
+      if (projectUrlsList[projectId][i] == projectUrlHash) {
+        projectUrlsList[projectId][i] = projectUrlsList[projectId][length - 1];
+        projectUrlsList[projectId].pop();
+        break;
       }
     }
-
-    revert IImplicitProjectRegistry.ProjectUrlNotFound();
+    emit IImplicitProjectRegistry.ProjectUrlRemoved(projectId, projectUrlHash);
   }
 
   /// @inheritdoc IImplicitProjectRegistry
@@ -94,7 +92,7 @@ contract ImplicitProjectRegistry is IImplicitProjectRegistry {
   function listProjectUrls(
     bytes32 projectId
   ) public view returns (bytes32[] memory) {
-    return projectUrls[projectId];
+    return projectUrlsList[projectId];
   }
 
   /// @inheritdoc IImplicitProjectValidation
@@ -104,13 +102,9 @@ contract ImplicitProjectRegistry is IImplicitProjectRegistry {
     bytes32 projectId
   ) external view returns (bytes32) {
     bytes32 hashedUrl = _hashUrl(attestation.authData.redirectUrl);
-    bytes32[] storage urls = projectUrls[projectId];
-    uint256 length = urls.length;
 
-    for (uint256 i; i < length; i++) {
-      if (urls[i] == hashedUrl) {
-        return attestation.generateImplicitRequestMagic(wallet);
-      }
+    if (isProjectUrl[projectId][hashedUrl]) {
+      return attestation.generateImplicitRequestMagic(wallet);
     }
 
     revert IImplicitProjectValidation.InvalidRedirectUrl();
