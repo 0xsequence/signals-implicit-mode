@@ -65,25 +65,24 @@ contract ImplicitProjectRegistry is IImplicitProjectRegistry {
   /// @param projectId The project id
   /// @param projectUrlHash The project URL hash
   function removeProjectUrlHash(bytes32 projectId, bytes32 projectUrlHash) public onlyProjectOwner(projectId) {
-    // Remove the project URL from the project URLs array
-    bool removed = false;
-    bytes32[] memory urls = projectUrls[projectId];
-    if (urls.length == 0) {
+    bytes32[] storage urls = projectUrls[projectId];
+    uint256 length = urls.length;
+
+    if (length == 0) {
       revert IImplicitProjectRegistry.ProjectUrlNotFound();
     }
-    bytes32[] memory newUrls = new bytes32[](urls.length - 1);
-    for (uint256 i = 0; i < urls.length; i++) {
-      if (urls[i] != projectUrlHash) {
-        newUrls[i] = urls[i];
-      } else {
-        removed = true;
+
+    // Find and remove the URL by replacing it with the last element
+    for (uint256 i; i < length; i++) {
+      if (urls[i] == projectUrlHash) {
+        urls[i] = urls[length - 1];
+        urls.pop();
+        emit IImplicitProjectRegistry.ProjectUrlRemoved(projectId, projectUrlHash);
+        return;
       }
     }
-    if (!removed) {
-      revert IImplicitProjectRegistry.ProjectUrlNotFound();
-    }
-    projectUrls[projectId] = newUrls;
-    emit IImplicitProjectRegistry.ProjectUrlRemoved(projectId, projectUrlHash);
+
+    revert IImplicitProjectRegistry.ProjectUrlNotFound();
   }
 
   /// @inheritdoc IImplicitProjectRegistry
@@ -105,11 +104,15 @@ contract ImplicitProjectRegistry is IImplicitProjectRegistry {
     bytes32 projectId
   ) external view returns (bytes32) {
     bytes32 hashedUrl = _hashUrl(attestation.authData.redirectUrl);
-    for (uint256 i = 0; i < projectUrls[projectId].length; i++) {
-      if (projectUrls[projectId][i] == hashedUrl) {
+    bytes32[] storage urls = projectUrls[projectId];
+    uint256 length = urls.length;
+
+    for (uint256 i; i < length; i++) {
+      if (urls[i] == hashedUrl) {
         return attestation.generateImplicitRequestMagic(wallet);
       }
     }
+
     revert IImplicitProjectValidation.InvalidRedirectUrl();
   }
 
