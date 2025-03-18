@@ -22,18 +22,23 @@ contract SignalsImplicitModeTest is Test {
   }
 
   function test_acceptsValidUrl(
-    bytes32 projectId,
+    bytes12 projectIdUpper,
+    address owner,
     string memory url,
     Attestation memory attestation,
     address wallet,
     Payload.Call memory call
   ) public {
-    signalsImplicitMode = new SignalsImplicitModeMock(address(registry), projectId);
     attestation.authData.redirectUrl = url;
 
     // Claim the project and add the url
-    registry.claimProject(projectId);
+    vm.startPrank(owner);
+    bytes32 projectId = registry.claimProject(projectIdUpper);
     registry.addProjectUrl(projectId, url);
+    vm.stopPrank();
+
+    // Initialize the signals implicit mode
+    signalsImplicitMode = new SignalsImplicitModeMock(address(registry), projectId);
 
     // Accept the implicit request
     bytes32 expectedMagic = attestation.generateImplicitRequestMagic(wallet);

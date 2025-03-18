@@ -6,10 +6,11 @@ import { IImplicitProjectValidation } from "src/registry/IImplicitProjectValidat
 interface IImplicitProjectRegistry is IImplicitProjectValidation {
 
   /// @notice Claim a project
-  /// @param projectId The project id
+  /// @param projectIdUpper The project id upper
+  /// @return projectId The concatenation of the `projectIdUpper` and the `msg.sender`
   function claimProject(
-    bytes32 projectId
-  ) external;
+    bytes12 projectIdUpper
+  ) external returns (bytes32 projectId);
 
   /// @notice Transfer a project
   /// @param projectId The project id

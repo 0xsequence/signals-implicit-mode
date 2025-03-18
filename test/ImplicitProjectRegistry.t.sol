@@ -22,23 +22,27 @@ contract ImplicitProjectRegistryTest is Test {
 
   // Positive Tests
 
-  function test_claimProject(address owner, bytes32 projectId) public {
+  function test_claimProject(address owner, bytes12 projectIdUpper) public {
     vm.assume(owner != address(0));
+
+    bytes32 projectId = _projectId(projectIdUpper, owner);
 
     vm.expectEmit();
     emit IImplicitProjectRegistry.ProjectClaimed(projectId, owner);
 
     vm.prank(owner);
-    registry.claimProject(projectId);
+    registry.claimProject(projectIdUpper);
 
     assertEq(registry.projectOwner(projectId), owner);
   }
 
-  function test_transferProject(address owner, address newOwner, bytes32 projectId) public {
+  function test_transferProject(address owner, address newOwner, bytes12 projectIdUpper, bytes32 urlHash) public {
     vm.assume(owner != address(0) && newOwner != address(0) && owner != newOwner);
 
+    bytes32 projectId = _projectId(projectIdUpper, owner);
+
     vm.prank(owner);
-    registry.claimProject(projectId);
+    registry.claimProject(projectIdUpper);
 
     vm.expectEmit();
     emit IImplicitProjectRegistry.ProjectOwnerTransferred(projectId, newOwner);
@@ -47,14 +51,21 @@ contract ImplicitProjectRegistryTest is Test {
     registry.transferProject(projectId, newOwner);
 
     assertEq(registry.projectOwner(projectId), newOwner);
+
+    // Check functions now work with the new owner
+    vm.prank(newOwner);
+    registry.addProjectUrlHash(projectId, urlHash);
+    assertEq(registry.listProjectUrls(projectId).length, 1);
   }
 
-  function test_addProjectUrl(address owner, bytes32 projectId, string memory url) public {
+  function test_addProjectUrl(address owner, bytes12 projectIdUpper, string memory url) public {
     vm.assume(owner != address(0));
     vm.assume(bytes(url).length > 0);
 
+    bytes32 projectId = _projectId(projectIdUpper, owner);
+
     vm.prank(owner);
-    registry.claimProject(projectId);
+    registry.claimProject(projectIdUpper);
 
     vm.expectEmit();
     emit IImplicitProjectRegistry.ProjectUrlAdded(projectId, _hashUrl(url));
@@ -66,11 +77,13 @@ contract ImplicitProjectRegistryTest is Test {
     assertEq(urls[0], _hashUrl(url));
   }
 
-  function test_addProjectUrlHash(address owner, bytes32 projectId, bytes32 urlHash) public {
+  function test_addProjectUrlHash(address owner, bytes12 projectIdUpper, bytes32 urlHash) public {
     vm.assume(owner != address(0));
 
+    bytes32 projectId = _projectId(projectIdUpper, owner);
+
     vm.prank(owner);
-    registry.claimProject(projectId);
+    registry.claimProject(projectIdUpper);
 
     vm.expectEmit();
     emit IImplicitProjectRegistry.ProjectUrlAdded(projectId, urlHash);
@@ -82,34 +95,37 @@ contract ImplicitProjectRegistryTest is Test {
     assertEq(urls[0], urlHash);
   }
 
-  function test_removeProjectUrl(address owner, bytes32 projectId, string memory url) public {
+  function test_removeProjectUrl(address owner, bytes12 projectIdUpper, string memory url) public {
     vm.assume(owner != address(0));
     vm.assume(bytes(url).length > 0);
 
-    vm.prank(owner);
-    registry.claimProject(projectId);
-    vm.prank(owner);
+    bytes32 projectId = _projectId(projectIdUpper, owner);
+
+    vm.startPrank(owner);
+    registry.claimProject(projectIdUpper);
     registry.addProjectUrl(projectId, url);
 
     vm.expectEmit();
     emit IImplicitProjectRegistry.ProjectUrlRemoved(projectId, _hashUrl(url));
 
-    vm.prank(owner);
     registry.removeProjectUrl(projectId, url);
+    vm.stopPrank();
 
     bytes32[] memory urls = registry.listProjectUrls(projectId);
     assertEq(urls.length, 0);
   }
 
-  function test_validateAttestation(address owner, address wallet, bytes32 projectId, string memory url) public {
+  function test_validateAttestation(address owner, address wallet, bytes12 projectIdUpper, string memory url) public {
     vm.assume(owner != address(0) && wallet != address(0));
     vm.assume(bytes(url).length > 0);
+
+    bytes32 projectId = _projectId(projectIdUpper, owner);
 
     Attestation memory attestation;
     attestation.authData.redirectUrl = url;
 
     vm.prank(owner);
-    registry.claimProject(projectId);
+    registry.claimProject(projectIdUpper);
     vm.prank(owner);
     registry.addProjectUrl(projectId, url);
 
@@ -119,57 +135,63 @@ contract ImplicitProjectRegistryTest is Test {
 
   // Negative Tests
 
-  function test_fail_claimProjectTwice(address owner, address otherUser, bytes32 projectId) public {
+  function test_fail_claimProjectTwice(address owner, address otherUser, bytes12 projectIdUpper) public {
     vm.assume(owner != address(0) && otherUser != address(0) && owner != otherUser);
 
-    vm.prank(owner);
-    registry.claimProject(projectId);
+    bytes32 projectId = _projectId(projectIdUpper, owner);
 
+    vm.startPrank(owner);
+    registry.claimProject(projectIdUpper);
+
+    // Transfer the project to the other user
+    registry.transferProject(projectId, otherUser);
+
+    // Attempt to reclaim
     vm.expectRevert(IImplicitProjectRegistry.ProjectAlreadyClaimed.selector);
-    vm.prank(otherUser);
-    registry.claimProject(projectId);
+    registry.claimProject(projectIdUpper);
   }
 
-  function test_fail_transferProjectByNonOwner(
-    address owner,
-    address nonOwner,
-    address newOwner,
-    bytes32 projectId
-  ) public {
-    vm.assume(owner != address(0) && nonOwner != address(0) && newOwner != address(0));
-    vm.assume(owner != nonOwner && owner != newOwner && nonOwner != newOwner);
+  function test_fail_transferProjectByNonOwner(address owner, address nonOwner, bytes12 projectIdUpper) public {
+    vm.assume(owner != address(0) && nonOwner != address(0));
+    vm.assume(owner != nonOwner);
+
+    bytes32 projectId = _projectId(projectIdUpper, owner);
 
     vm.prank(owner);
-    registry.claimProject(projectId);
+    registry.claimProject(projectIdUpper);
 
     vm.expectRevert(IImplicitProjectRegistry.NotProjectOwner.selector);
     vm.prank(nonOwner);
-    registry.transferProject(projectId, newOwner);
+    registry.transferProject(projectId, nonOwner);
   }
 
   function test_fail_addProjectUrlByNonOwner(
     address owner,
     address nonOwner,
-    bytes32 projectId,
+    bytes12 projectIdUpper,
     string memory url
   ) public {
     vm.assume(owner != address(0) && nonOwner != address(0) && owner != nonOwner);
     vm.assume(bytes(url).length > 0);
 
+    bytes32 projectId = _projectId(projectIdUpper, owner);
+
     vm.prank(owner);
-    registry.claimProject(projectId);
+    registry.claimProject(projectIdUpper);
 
     vm.expectRevert(IImplicitProjectRegistry.NotProjectOwner.selector);
     vm.prank(nonOwner);
     registry.addProjectUrl(projectId, url);
   }
 
-  function test_fail_removeNonexistentUrl(address owner, bytes32 projectId, string memory url) public {
+  function test_fail_removeNonexistentUrl(address owner, bytes12 projectIdUpper, string memory url) public {
     vm.assume(owner != address(0));
     vm.assume(bytes(url).length > 0);
 
+    bytes32 projectId = _projectId(projectIdUpper, owner);
+
     vm.prank(owner);
-    registry.claimProject(projectId);
+    registry.claimProject(projectIdUpper);
 
     vm.expectRevert(IImplicitProjectRegistry.ProjectUrlNotFound.selector);
     vm.prank(owner);
@@ -179,7 +201,7 @@ contract ImplicitProjectRegistryTest is Test {
   function test_fail_validateAttestationWithInvalidUrl(
     address owner,
     address wallet,
-    bytes32 projectId,
+    bytes12 projectIdUpper,
     string memory validUrl,
     string memory invalidUrl
   ) public {
@@ -187,8 +209,10 @@ contract ImplicitProjectRegistryTest is Test {
     vm.assume(bytes(validUrl).length > 0 && bytes(invalidUrl).length > 0);
     vm.assume(keccak256(bytes(validUrl)) != keccak256(bytes(invalidUrl)));
 
+    bytes32 projectId = _projectId(projectIdUpper, owner);
+
     vm.prank(owner);
-    registry.claimProject(projectId);
+    registry.claimProject(projectIdUpper);
 
     Attestation memory attestation;
     attestation.authData.redirectUrl = invalidUrl;
@@ -205,6 +229,10 @@ contract ImplicitProjectRegistryTest is Test {
     string memory url
   ) internal pure returns (bytes32) {
     return keccak256(abi.encodePacked(url));
+  }
+
+  function _projectId(bytes12 projectIdUpper, address owner) internal pure returns (bytes32 projectId) {
+    projectId = bytes32(uint256(bytes32(projectIdUpper)) << 160 | uint160(owner));
   }
 
 }

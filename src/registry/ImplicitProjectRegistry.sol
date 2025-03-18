@@ -26,13 +26,19 @@ contract ImplicitProjectRegistry is IImplicitProjectRegistry {
 
   /// @inheritdoc IImplicitProjectRegistry
   function claimProject(
-    bytes32 projectId
-  ) public {
+    bytes12 projectIdUpper
+  ) public returns (bytes32 projectId) {
+    address owner = msg.sender;
+    assembly {
+      projectId := or(shl(160, projectIdUpper), owner)
+    }
     if (projectOwner[projectId] != address(0)) {
       revert IImplicitProjectRegistry.ProjectAlreadyClaimed();
     }
-    projectOwner[projectId] = msg.sender;
-    emit IImplicitProjectRegistry.ProjectClaimed(projectId, msg.sender);
+    projectOwner[projectId] = owner;
+    emit IImplicitProjectRegistry.ProjectClaimed(projectId, owner);
+
+    return projectId;
   }
 
   /// @inheritdoc IImplicitProjectRegistry
