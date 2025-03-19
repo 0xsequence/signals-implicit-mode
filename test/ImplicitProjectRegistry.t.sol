@@ -23,71 +23,52 @@ contract ImplicitProjectRegistryTest is Test, TestHelper {
 
   // Positive Tests
 
-  function test_claimProject(address admin, bytes12 projectIdUpper) public {
-    bytes32 projectId = _projectId(projectIdUpper, admin);
+  function test_claimProject(address owner, bytes12 projectIdUpper) public {
+    bytes32 projectId = _projectId(projectIdUpper, owner);
 
     vm.expectEmit();
-    emit IImplicitProjectRegistry.ProjectClaimed(projectId, admin);
+    emit IImplicitProjectRegistry.ProjectClaimed(projectId, owner);
 
-    vm.prank(admin);
+    vm.prank(owner);
     registry.claimProject(projectIdUpper);
 
-    assertTrue(registry.isProjectAdmin(projectId, admin));
+    assertEq(registry.projectOwner(projectId), owner);
   }
 
-  function test_addAdmin(address initialAdmin, address newAdmin, bytes12 projectIdUpper) public {
-    vm.assume(initialAdmin != newAdmin);
+  function test_transferProject(address owner, address newOwner, bytes12 projectIdUpper, bytes32 urlHash) public {
+    vm.assume(owner != newOwner);
 
-    bytes32 projectId = _projectId(projectIdUpper, initialAdmin);
+    bytes32 projectId = _projectId(projectIdUpper, owner);
 
-    vm.prank(initialAdmin);
+    vm.prank(owner);
     registry.claimProject(projectIdUpper);
 
     vm.expectEmit();
-    emit IImplicitProjectRegistry.ProjectAdminAdded(projectId, newAdmin);
+    emit IImplicitProjectRegistry.ProjectOwnerTransferred(projectId, newOwner);
 
-    vm.prank(initialAdmin);
-    registry.addAdmin(projectId, newAdmin);
+    vm.prank(owner);
+    registry.transferProject(projectId, newOwner);
 
-    assertTrue(registry.isProjectAdmin(projectId, newAdmin));
+    assertEq(registry.projectOwner(projectId), newOwner);
 
-    // Check functions now work with the new admin
-    vm.prank(newAdmin);
-    registry.addProjectUrlHash(projectId, bytes32(uint256(1)));
+    // Check functions now work with the new owner
+    vm.prank(newOwner);
+    registry.addProjectUrlHash(projectId, urlHash);
     assertEq(registry.listProjectUrls(projectId).length, 1);
   }
 
-  function test_removeAdmin(address initialAdmin, address secondAdmin, bytes12 projectIdUpper) public {
-    vm.assume(initialAdmin != secondAdmin);
-
-    bytes32 projectId = _projectId(projectIdUpper, initialAdmin);
-
-    vm.startPrank(initialAdmin);
-    registry.claimProject(projectIdUpper);
-    registry.addAdmin(projectId, secondAdmin);
-    vm.stopPrank();
-
-    vm.expectEmit();
-    emit IImplicitProjectRegistry.ProjectAdminRemoved(projectId, secondAdmin);
-
-    vm.prank(initialAdmin);
-    registry.removeAdmin(projectId, secondAdmin);
-
-    assertFalse(registry.isProjectAdmin(projectId, secondAdmin));
-  }
-
-  function test_addProjectUrl(address admin, bytes12 projectIdUpper, string memory url) public {
+  function test_addProjectUrl(address owner, bytes12 projectIdUpper, string memory url) public {
     vm.assume(bytes(url).length > 0);
 
-    bytes32 projectId = _projectId(projectIdUpper, admin);
+    bytes32 projectId = _projectId(projectIdUpper, owner);
 
-    vm.prank(admin);
+    vm.prank(owner);
     registry.claimProject(projectIdUpper);
 
     vm.expectEmit();
     emit IImplicitProjectRegistry.ProjectUrlAdded(projectId, _hashUrl(url));
 
-    vm.prank(admin);
+    vm.prank(owner);
     registry.addProjectUrl(projectId, url);
 
     bytes32[] memory urls = registry.listProjectUrls(projectId);
@@ -95,23 +76,23 @@ contract ImplicitProjectRegistryTest is Test, TestHelper {
     assertEq(urls[0], _hashUrl(url));
   }
 
-  function test_addProjectUrlHash(address admin, bytes12 projectIdUpper, bytes32 urlHash) public {
-    bytes32 projectId = _projectId(projectIdUpper, admin);
+  function test_addProjectUrlHash(address owner, bytes12 projectIdUpper, bytes32 urlHash) public {
+    bytes32 projectId = _projectId(projectIdUpper, owner);
 
-    vm.prank(admin);
+    vm.prank(owner);
     registry.claimProject(projectIdUpper);
 
     vm.expectEmit();
     emit IImplicitProjectRegistry.ProjectUrlAdded(projectId, urlHash);
 
-    vm.prank(admin);
+    vm.prank(owner);
     registry.addProjectUrlHash(projectId, urlHash);
 
     bytes32[] memory urls = registry.listProjectUrls(projectId);
     assertEq(urls[0], urlHash);
   }
 
-  function test_removeProjectUrl(address admin, bytes12 projectIdUpper, string[] memory urls, uint256 urlIdx) public {
+  function test_removeProjectUrl(address owner, bytes12 projectIdUpper, string[] memory urls, uint256 urlIdx) public {
     vm.assume(urls.length > 0);
     // Max 10 urls
     if (urls.length > 10) {
@@ -122,9 +103,9 @@ contract ImplicitProjectRegistryTest is Test, TestHelper {
     urls = _deduplicateStringArray(urls);
     urlIdx = bound(urlIdx, 0, urls.length - 1);
 
-    bytes32 projectId = _projectId(projectIdUpper, admin);
+    bytes32 projectId = _projectId(projectIdUpper, owner);
 
-    vm.startPrank(admin);
+    vm.startPrank(owner);
     registry.claimProject(projectIdUpper);
     for (uint256 i; i < urls.length; i++) {
       registry.addProjectUrl(projectId, urls[i]);
@@ -145,7 +126,7 @@ contract ImplicitProjectRegistryTest is Test, TestHelper {
   }
 
   function test_removeProjectUrlHash(
-    address admin,
+    address owner,
     bytes12 projectIdUpper,
     bytes32[] memory urlHashes,
     uint256 urlHashIdx
@@ -160,9 +141,9 @@ contract ImplicitProjectRegistryTest is Test, TestHelper {
     urlHashes = _deduplicateBytes32Array(urlHashes);
     urlHashIdx = bound(urlHashIdx, 0, urlHashes.length - 1);
 
-    bytes32 projectId = _projectId(projectIdUpper, admin);
+    bytes32 projectId = _projectId(projectIdUpper, owner);
 
-    vm.startPrank(admin);
+    vm.startPrank(owner);
     registry.claimProject(projectIdUpper);
     for (uint256 i; i < urlHashes.length; i++) {
       registry.addProjectUrlHash(projectId, urlHashes[i]);
@@ -182,19 +163,19 @@ contract ImplicitProjectRegistryTest is Test, TestHelper {
   }
 
   function test_validateAttestationSingle(
-    address admin,
+    address owner,
     address wallet,
     bytes12 projectIdUpper,
     string memory url
   ) public {
     vm.assume(bytes(url).length > 0);
 
-    bytes32 projectId = _projectId(projectIdUpper, admin);
+    bytes32 projectId = _projectId(projectIdUpper, owner);
 
     Attestation memory attestation;
     attestation.authData.redirectUrl = url;
 
-    vm.startPrank(admin);
+    vm.startPrank(owner);
     registry.claimProject(projectIdUpper);
     registry.addProjectUrl(projectId, url);
     vm.stopPrank();
@@ -204,7 +185,7 @@ contract ImplicitProjectRegistryTest is Test, TestHelper {
   }
 
   function test_validateAttestationMultiple(
-    address admin,
+    address owner,
     address wallet,
     bytes12 projectIdUpper,
     string[] memory urls,
@@ -220,12 +201,12 @@ contract ImplicitProjectRegistryTest is Test, TestHelper {
     urls = _deduplicateStringArray(urls);
     urlIdx = bound(urlIdx, 0, urls.length - 1);
 
-    bytes32 projectId = _projectId(projectIdUpper, admin);
+    bytes32 projectId = _projectId(projectIdUpper, owner);
 
     Attestation memory attestation;
     attestation.authData.redirectUrl = urls[urlIdx];
 
-    vm.startPrank(admin);
+    vm.startPrank(owner);
     registry.claimProject(projectIdUpper);
     for (uint256 i; i < urls.length; i++) {
       registry.addProjectUrl(projectId, urls[i]);
@@ -238,14 +219,16 @@ contract ImplicitProjectRegistryTest is Test, TestHelper {
 
   // Negative Tests
 
-  function test_fail_claimProjectTwice(address admin, bytes12 projectIdUpper) public {
-    bytes32 projectId = _projectId(projectIdUpper, admin);
+  function test_fail_claimProjectTwice(address owner, address otherUser, bytes12 projectIdUpper) public {
+    vm.assume(owner != otherUser);
 
-    vm.startPrank(admin);
+    bytes32 projectId = _projectId(projectIdUpper, owner);
+
+    vm.startPrank(owner);
     registry.claimProject(projectIdUpper);
 
-    // Remove self as admin
-    registry.removeAdmin(projectId, admin);
+    // Transfer the project to the other user
+    registry.transferProject(projectId, otherUser);
 
     // Attempt to reclaim
     vm.expectRevert(IImplicitProjectRegistry.ProjectAlreadyClaimed.selector);
@@ -253,136 +236,98 @@ contract ImplicitProjectRegistryTest is Test, TestHelper {
   }
 
   function test_fail_addAdminByNonAdmin(
-    address admin,
-    address nonAdmin,
-    address newAdmin,
+    address owner,
+    address nonOwner,
     bytes12 projectIdUpper
   ) public {
-    vm.assume(admin != nonAdmin && admin != newAdmin);
+    vm.assume(owner != nonOwner);
 
-    bytes32 projectId = _projectId(projectIdUpper, admin);
+    bytes32 projectId = _projectId(projectIdUpper, owner);
 
-    vm.prank(admin);
+    vm.prank(owner);
     registry.claimProject(projectIdUpper);
 
-    vm.expectRevert(IImplicitProjectRegistry.NotProjectAdmin.selector);
-    vm.prank(nonAdmin);
-    registry.addAdmin(projectId, newAdmin);
+    vm.expectRevert(IImplicitProjectRegistry.NotProjectOwner.selector);
+    vm.prank(nonOwner);
+    registry.transferProject(projectId, nonOwner);
   }
 
-  function test_fail_addAdminTwice(address admin, bytes12 projectIdUpper) public {
-    bytes32 projectId = _projectId(projectIdUpper, admin);
-
-    vm.startPrank(admin);
-    registry.claimProject(projectIdUpper);
-
-    vm.expectRevert(IImplicitProjectRegistry.AlreadyProjectAdmin.selector);
-    registry.addAdmin(projectId, admin);
-    vm.stopPrank();
-  }
-
-  function test_fail_removeNonAdmin(address admin, address nonAdmin, bytes12 projectIdUpper) public {
-    vm.assume(admin != nonAdmin);
-
-    bytes32 projectId = _projectId(projectIdUpper, admin);
-
-    vm.prank(admin);
-    registry.claimProject(projectIdUpper);
-
-    vm.expectRevert(IImplicitProjectRegistry.NotProjectAdmin.selector);
-    vm.prank(admin);
-    registry.removeAdmin(projectId, nonAdmin);
-  }
-
-  function test_fail_removeAdminByNonAdmin(address admin, address nonAdmin, bytes12 projectIdUpper) public {
-    vm.assume(admin != nonAdmin);
-
-    bytes32 projectId = _projectId(projectIdUpper, admin);
-
-    vm.prank(admin);
-    registry.claimProject(projectIdUpper);
-
-    vm.expectRevert(IImplicitProjectRegistry.NotProjectAdmin.selector);
-    vm.prank(nonAdmin);
-    registry.removeAdmin(projectId, admin);
-  }
-
-  function test_fail_addProjectUrlByNonAdmin(
-    address admin,
-    address nonAdmin,
+  function test_fail_addProjectUrlByNonOwner(
+    address owner,
+    address nonOwner,
     bytes12 projectIdUpper,
     string memory url
   ) public {
-    vm.assume(admin != nonAdmin);
+    vm.assume(owner != nonOwner);
 
-    bytes32 projectId = _projectId(projectIdUpper, admin);
+    bytes32 projectId = _projectId(projectIdUpper, owner);
 
-    vm.prank(admin);
+    vm.prank(owner);
     registry.claimProject(projectIdUpper);
 
-    vm.expectRevert(IImplicitProjectRegistry.NotProjectAdmin.selector);
-    vm.prank(nonAdmin);
+    vm.expectRevert(IImplicitProjectRegistry.NotProjectOwner.selector);
+    vm.prank(nonOwner);
     registry.addProjectUrl(projectId, url);
   }
 
-  function test_fail_addProjectUrlHashByNonAdmin(
-    address admin,
-    address nonAdmin,
+  function test_fail_addProjectUrlHashByNonOwner(
+    address owner,
+    address nonOwner,
     bytes12 projectIdUpper,
     bytes32 urlHash
   ) public {
-    vm.assume(admin != nonAdmin);
+    vm.assume(owner != nonOwner);
 
-    bytes32 projectId = _projectId(projectIdUpper, admin);
+    bytes32 projectId = _projectId(projectIdUpper, owner);
 
-    vm.prank(admin);
+    vm.prank(owner);
     registry.claimProject(projectIdUpper);
 
-    vm.expectRevert(IImplicitProjectRegistry.NotProjectAdmin.selector);
-    vm.prank(nonAdmin);
+    vm.expectRevert(IImplicitProjectRegistry.NotProjectOwner.selector);
+    vm.prank(nonOwner);
     registry.addProjectUrlHash(projectId, urlHash);
   }
 
-  function test_fail_removeProjectUrlByNonAdmin(
-    address admin,
-    address nonAdmin,
+  function test_fail_removeProjectUrlByNonOwner(
+    address owner,
+    address nonOwner,
     bytes12 projectIdUpper,
     string memory url
   ) public {
-    vm.assume(admin != nonAdmin);
+    vm.assume(owner != nonOwner);
 
-    bytes32 projectId = _projectId(projectIdUpper, admin);
+    bytes32 projectId = _projectId(projectIdUpper, owner);
 
-    vm.prank(admin);
+    vm.prank(owner);
     registry.claimProject(projectIdUpper);
 
-    vm.expectRevert(IImplicitProjectRegistry.NotProjectAdmin.selector);
-    vm.prank(nonAdmin);
+    vm.expectRevert(IImplicitProjectRegistry.NotProjectOwner.selector);
+    vm.prank(nonOwner);
     registry.removeProjectUrl(projectId, url);
   }
 
-  function test_fail_removeProjectUrlHashByNonAdmin(
-    address admin,
-    address nonAdmin,
+  function test_fail_removeProjectUrlHashByNonOwner(
+    address owner,
+    address nonOwner,
     bytes12 projectIdUpper,
     bytes32 urlHash
   ) public {
-    vm.assume(admin != nonAdmin);
+    vm.assume(owner != nonOwner);
 
-    bytes32 projectId = _projectId(projectIdUpper, admin);
+    bytes32 projectId = _projectId(projectIdUpper, owner);
 
-    vm.prank(admin);
+    vm.prank(owner);
     registry.claimProject(projectIdUpper);
 
-    vm.expectRevert(IImplicitProjectRegistry.NotProjectAdmin.selector);
-    vm.prank(nonAdmin);
+    vm.expectRevert(IImplicitProjectRegistry.NotProjectOwner.selector);
+    vm.prank(nonOwner);
     registry.removeProjectUrlHash(projectId, urlHash, 0);
   }
 
-  function test_fail_addProjectUrlAlreadyExists(address admin, bytes12 projectIdUpper, string memory url) public {
+  function test_fail_addProjectUrlAlreadyExists(address owner, bytes12 projectIdUpper, string memory url) public {
     vm.assume(bytes(url).length > 0);
 
-    vm.startPrank(admin);
+    vm.startPrank(owner);
     bytes32 projectId = registry.claimProject(projectIdUpper);
     registry.addProjectUrl(projectId, url);
 
@@ -391,8 +336,8 @@ contract ImplicitProjectRegistryTest is Test, TestHelper {
     vm.stopPrank();
   }
 
-  function test_fail_addProjectUrlHashAlreadyExists(address admin, bytes12 projectIdUpper, bytes32 urlHash) public {
-    vm.startPrank(admin);
+  function test_fail_addProjectUrlHashAlreadyExists(address owner, bytes12 projectIdUpper, bytes32 urlHash) public {
+    vm.startPrank(owner);
     bytes32 projectId = registry.claimProject(projectIdUpper);
     registry.addProjectUrlHash(projectId, urlHash);
 
@@ -401,8 +346,8 @@ contract ImplicitProjectRegistryTest is Test, TestHelper {
     vm.stopPrank();
   }
 
-  function test_fail_addProjectUrlAlreadyExistsHash(address admin, bytes12 projectIdUpper, string memory url) public {
-    vm.startPrank(admin);
+  function test_fail_addProjectUrlAlreadyExistsHash(address owner, bytes12 projectIdUpper, string memory url) public {
+    vm.startPrank(owner);
     bytes32 projectId = registry.claimProject(projectIdUpper);
     registry.addProjectUrlHash(projectId, _hashUrl(url));
 
@@ -412,11 +357,11 @@ contract ImplicitProjectRegistryTest is Test, TestHelper {
   }
 
   function test_fail_addProjectUrlHashAlreadyExistsFull(
-    address admin,
+    address owner,
     bytes12 projectIdUpper,
     string memory url
   ) public {
-    vm.startPrank(admin);
+    vm.startPrank(owner);
     bytes32 projectId = registry.claimProject(projectIdUpper);
     registry.addProjectUrl(projectId, url);
 
@@ -425,32 +370,32 @@ contract ImplicitProjectRegistryTest is Test, TestHelper {
     vm.stopPrank();
   }
 
-  function test_fail_removeNonexistentUrl(address admin, bytes12 projectIdUpper, string memory url) public {
+  function test_fail_removeNonexistentUrl(address owner, bytes12 projectIdUpper, string memory url) public {
     vm.assume(bytes(url).length > 0);
 
-    bytes32 projectId = _projectId(projectIdUpper, admin);
+    bytes32 projectId = _projectId(projectIdUpper, owner);
 
-    vm.prank(admin);
+    vm.prank(owner);
     registry.claimProject(projectIdUpper);
 
     vm.expectRevert(IImplicitProjectRegistry.ProjectUrlNotFound.selector);
-    vm.prank(admin);
+    vm.prank(owner);
     registry.removeProjectUrl(projectId, url);
   }
 
-  function test_fail_removeNonexistentUrlHash(address admin, bytes12 projectIdUpper, bytes32 urlHash) public {
-    bytes32 projectId = _projectId(projectIdUpper, admin);
+  function test_fail_removeNonexistentUrlHash(address owner, bytes12 projectIdUpper, bytes32 urlHash) public {
+    bytes32 projectId = _projectId(projectIdUpper, owner);
 
-    vm.prank(admin);
+    vm.prank(owner);
     registry.claimProject(projectIdUpper);
 
     vm.expectRevert(IImplicitProjectRegistry.ProjectUrlNotFound.selector);
-    vm.prank(admin);
+    vm.prank(owner);
     registry.removeProjectUrlHash(projectId, urlHash, 0);
   }
 
   function test_fail_removeUrlHashWrongIndex(
-    address admin,
+    address owner,
     bytes12 projectIdUpper,
     bytes32[] memory urlHashes,
     uint256 urlHashIdx
@@ -465,9 +410,9 @@ contract ImplicitProjectRegistryTest is Test, TestHelper {
     urlHashes = _deduplicateBytes32Array(urlHashes);
     urlHashIdx = bound(urlHashIdx, 0, urlHashes.length - 1);
 
-    bytes32 projectId = _projectId(projectIdUpper, admin);
+    bytes32 projectId = _projectId(projectIdUpper, owner);
 
-    vm.startPrank(admin);
+    vm.startPrank(owner);
     registry.claimProject(projectIdUpper);
     for (uint256 i; i < urlHashes.length; i++) {
       registry.addProjectUrlHash(projectId, urlHashes[i]);
@@ -475,12 +420,12 @@ contract ImplicitProjectRegistryTest is Test, TestHelper {
     vm.stopPrank();
 
     vm.expectRevert(IImplicitProjectRegistry.InvalidProjectUrlIndex.selector);
-    vm.prank(admin);
+    vm.prank(owner);
     registry.removeProjectUrlHash(projectId, urlHashes[urlHashIdx], urlHashIdx + 1);
   }
 
   function test_fail_validateAttestationWithInvalidUrl(
-    address admin,
+    address owner,
     address wallet,
     bytes12 projectIdUpper,
     string memory validUrl,
@@ -489,15 +434,15 @@ contract ImplicitProjectRegistryTest is Test, TestHelper {
     vm.assume(bytes(validUrl).length > 0 && bytes(invalidUrl).length > 0);
     vm.assume(keccak256(bytes(validUrl)) != keccak256(bytes(invalidUrl)));
 
-    bytes32 projectId = _projectId(projectIdUpper, admin);
+    bytes32 projectId = _projectId(projectIdUpper, owner);
 
-    vm.prank(admin);
+    vm.prank(owner);
     registry.claimProject(projectIdUpper);
 
     Attestation memory attestation;
     attestation.authData.redirectUrl = invalidUrl;
 
-    vm.prank(admin);
+    vm.prank(owner);
     registry.addProjectUrl(projectId, validUrl);
 
     vm.expectRevert(IImplicitProjectValidation.InvalidRedirectUrl.selector);

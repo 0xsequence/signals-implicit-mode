@@ -12,15 +12,10 @@ interface IImplicitProjectRegistry is IImplicitProjectValidation {
     bytes12 projectIdUpper
   ) external returns (bytes32 projectId);
 
-  /// @notice Add an admin to a project
+  /// @notice Transfer a project
   /// @param projectId The project id
-  /// @param admin The admin to add
-  function addAdmin(bytes32 projectId, address admin) external;
-
-  /// @notice Remove an admin from a project
-  /// @param projectId The project id
-  /// @param admin The admin to remove
-  function removeAdmin(bytes32 projectId, address admin) external;
+  /// @param newOwner The new owner
+  function transferProject(bytes32 projectId, address newOwner) external;
 
   /// @notice Add a project URL
   /// @param projectId The project id
@@ -39,11 +34,8 @@ interface IImplicitProjectRegistry is IImplicitProjectValidation {
     bytes32 projectId
   ) external view returns (bytes32[] memory);
 
-  /// @notice Not project admin error
-  error NotProjectAdmin();
-
-  /// @notice Already project admin error
-  error AlreadyProjectAdmin();
+  /// @notice Not project owner error
+  error NotProjectOwner();
 
   /// @notice Project already claimed error
   error ProjectAlreadyClaimed();
@@ -60,11 +52,8 @@ interface IImplicitProjectRegistry is IImplicitProjectValidation {
   /// @notice Emitted when a project is claimed
   event ProjectClaimed(bytes32 indexed projectId, address indexed owner);
 
-  /// @notice Emitted when a project admin is added
-  event ProjectAdminAdded(bytes32 indexed projectId, address indexed admin);
-
-  /// @notice Emitted when a project admin is removed
-  event ProjectAdminRemoved(bytes32 indexed projectId, address indexed admin);
+  /// @notice Emitted when a project owner is transferred
+  event ProjectOwnerTransferred(bytes32 indexed projectId, address indexed newOwner);
 
   /// @notice Emitted when a project URL is added
   event ProjectUrlAdded(bytes32 indexed projectId, bytes32 indexed urlHash);

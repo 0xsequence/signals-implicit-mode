@@ -9,21 +9,18 @@ contract ImplicitProjectRegistry is IImplicitProjectRegistry {
 
   using LibAttestation for Attestation;
 
-  /// @notice Project claimed
-  mapping(bytes32 => bool) public projectClaimed;
-
-  /// @notice Project admins
-  mapping(bytes32 => mapping(address => bool)) public isProjectAdmin;
+  /// @notice Project owner
+  mapping(bytes32 => address) public projectOwner;
 
   /// @notice Project URLs
   mapping(bytes32 => mapping(bytes32 => bool)) public isProjectUrl;
   mapping(bytes32 => bytes32[]) public projectUrlsList;
 
-  modifier onlyProjectAdmin(
+  modifier onlyProjectOwner(
     bytes32 projectId
   ) {
-    if (!isProjectAdmin[projectId][msg.sender]) {
-      revert IImplicitProjectRegistry.NotProjectAdmin();
+    if (projectOwner[projectId] != msg.sender) {
+      revert IImplicitProjectRegistry.NotProjectOwner();
     }
     _;
   }
@@ -32,46 +29,29 @@ contract ImplicitProjectRegistry is IImplicitProjectRegistry {
   function claimProject(
     bytes12 projectIdUpper
   ) public returns (bytes32 projectId) {
-    address admin = msg.sender;
+    address owner = msg.sender;
     assembly {
-      projectId := or(shl(160, projectIdUpper), admin)
+      projectId := or(shl(160, projectIdUpper), owner)
     }
-    if (projectClaimed[projectId]) {
+    if (projectOwner[projectId] != address(0)) {
       revert IImplicitProjectRegistry.ProjectAlreadyClaimed();
     }
-    projectClaimed[projectId] = true;
-    isProjectAdmin[projectId][admin] = true;
-    emit IImplicitProjectRegistry.ProjectClaimed(projectId, admin);
+    projectOwner[projectId] = owner;
+    emit IImplicitProjectRegistry.ProjectClaimed(projectId, owner);
 
     return projectId;
   }
 
-  /// @notice Add a project admin
-  /// @param projectId The project id
-  /// @param admin The admin to add
-  function addAdmin(bytes32 projectId, address admin) public onlyProjectAdmin(projectId) {
-    if (isProjectAdmin[projectId][admin]) {
-      revert IImplicitProjectRegistry.AlreadyProjectAdmin();
-    }
-    isProjectAdmin[projectId][admin] = true;
-    emit IImplicitProjectRegistry.ProjectAdminAdded(projectId, admin);
-  }
-
-  /// @notice Remove a project admin
-  /// @param projectId The project id
-  /// @param admin The admin to remove
-  function removeAdmin(bytes32 projectId, address admin) public onlyProjectAdmin(projectId) {
-    if (!isProjectAdmin[projectId][admin]) {
-      revert IImplicitProjectRegistry.NotProjectAdmin();
-    }
-    isProjectAdmin[projectId][admin] = false;
-    emit IImplicitProjectRegistry.ProjectAdminRemoved(projectId, admin);
+  /// @inheritdoc IImplicitProjectRegistry
+  function transferProject(bytes32 projectId, address newOwner) public onlyProjectOwner(projectId) {
+    projectOwner[projectId] = newOwner;
+    emit IImplicitProjectRegistry.ProjectOwnerTransferred(projectId, newOwner);
   }
 
   /// @notice Add a project URL hash
   /// @param projectId The project id
   /// @param projectUrlHash The project URL hash
-  function addProjectUrlHash(bytes32 projectId, bytes32 projectUrlHash) public onlyProjectAdmin(projectId) {
+  function addProjectUrlHash(bytes32 projectId, bytes32 projectUrlHash) public onlyProjectOwner(projectId) {
     if (isProjectUrl[projectId][projectUrlHash]) {
       revert IImplicitProjectRegistry.ProjectUrlAlreadyExists();
     }
@@ -81,7 +61,7 @@ contract ImplicitProjectRegistry is IImplicitProjectRegistry {
   }
 
   /// @inheritdoc IImplicitProjectRegistry
-  function addProjectUrl(bytes32 projectId, string memory projectUrl) public onlyProjectAdmin(projectId) {
+  function addProjectUrl(bytes32 projectId, string memory projectUrl) public onlyProjectOwner(projectId) {
     addProjectUrlHash(projectId, _hashUrl(projectUrl));
   }
 
@@ -93,7 +73,7 @@ contract ImplicitProjectRegistry is IImplicitProjectRegistry {
     bytes32 projectId,
     bytes32 projectUrlHash,
     uint256 urlIdx
-  ) public onlyProjectAdmin(projectId) {
+  ) public onlyProjectOwner(projectId) {
     if (!isProjectUrl[projectId][projectUrlHash]) {
       revert IImplicitProjectRegistry.ProjectUrlNotFound();
     }
@@ -107,7 +87,7 @@ contract ImplicitProjectRegistry is IImplicitProjectRegistry {
   }
 
   /// @inheritdoc IImplicitProjectRegistry
-  function removeProjectUrl(bytes32 projectId, string memory projectUrl) public onlyProjectAdmin(projectId) {
+  function removeProjectUrl(bytes32 projectId, string memory projectUrl) public onlyProjectOwner(projectId) {
     // Find the index of the project URL hash
     bytes32 projectUrlHash = _hashUrl(projectUrl);
     for (uint256 i; i < projectUrlsList[projectId].length; i++) {
