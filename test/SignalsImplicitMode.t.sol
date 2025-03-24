@@ -30,6 +30,7 @@ contract SignalsImplicitModeTest is Test, TestHelper {
     address wallet,
     Payload.Call memory call
   ) public {
+    vm.assume(owner != address(0));
     attestation.authData.redirectUrl = url;
 
     // Claim the project and add the url
@@ -56,6 +57,7 @@ contract SignalsImplicitModeTest is Test, TestHelper {
     address wallet,
     Payload.Call memory call
   ) public {
+    vm.assume(owner != address(0));
     vm.assume(urls.length > 0);
     // Max 10 urls
     if (urls.length > 10) {

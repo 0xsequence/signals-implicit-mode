@@ -30,6 +30,9 @@ contract ImplicitProjectRegistry is IImplicitProjectRegistry {
     bytes12 projectIdUpper
   ) public returns (bytes32 projectId) {
     address owner = msg.sender;
+    if (owner == address(0)) {
+      revert IImplicitProjectRegistry.InvalidProjectOwner();
+    }
     assembly {
       projectId := or(shl(160, projectIdUpper), owner)
     }
@@ -44,6 +47,9 @@ contract ImplicitProjectRegistry is IImplicitProjectRegistry {
 
   /// @inheritdoc IImplicitProjectRegistry
   function transferProject(bytes32 projectId, address newOwner) public onlyProjectOwner(projectId) {
+    if (newOwner == address(0)) {
+      revert IImplicitProjectRegistry.InvalidProjectOwner();
+    }
     projectOwner[projectId] = newOwner;
     emit IImplicitProjectRegistry.ProjectOwnerTransferred(projectId, newOwner);
   }

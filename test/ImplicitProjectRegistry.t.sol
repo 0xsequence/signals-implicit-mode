@@ -24,6 +24,7 @@ contract ImplicitProjectRegistryTest is Test, TestHelper {
   // Positive Tests
 
   function test_claimProject(address owner, bytes12 projectIdUpper) public {
+    vm.assume(owner != address(0));
     bytes32 projectId = _projectId(projectIdUpper, owner);
 
     vm.expectEmit();
@@ -36,6 +37,7 @@ contract ImplicitProjectRegistryTest is Test, TestHelper {
   }
 
   function test_transferProject(address owner, address newOwner, bytes12 projectIdUpper, bytes32 urlHash) public {
+    vm.assume(owner != address(0));
     vm.assume(owner != newOwner);
 
     bytes32 projectId = _projectId(projectIdUpper, owner);
@@ -58,6 +60,7 @@ contract ImplicitProjectRegistryTest is Test, TestHelper {
   }
 
   function test_addProjectUrl(address owner, bytes12 projectIdUpper, string memory url) public {
+    vm.assume(owner != address(0));
     vm.assume(bytes(url).length > 0);
 
     bytes32 projectId = _projectId(projectIdUpper, owner);
@@ -77,6 +80,7 @@ contract ImplicitProjectRegistryTest is Test, TestHelper {
   }
 
   function test_addProjectUrlHash(address owner, bytes12 projectIdUpper, bytes32 urlHash) public {
+    vm.assume(owner != address(0));
     bytes32 projectId = _projectId(projectIdUpper, owner);
 
     vm.prank(owner);
@@ -93,6 +97,7 @@ contract ImplicitProjectRegistryTest is Test, TestHelper {
   }
 
   function test_removeProjectUrl(address owner, bytes12 projectIdUpper, string[] memory urls, uint256 urlIdx) public {
+    vm.assume(owner != address(0));
     vm.assume(urls.length > 0);
     // Max 10 urls
     if (urls.length > 10) {
@@ -131,6 +136,7 @@ contract ImplicitProjectRegistryTest is Test, TestHelper {
     bytes32[] memory urlHashes,
     uint256 urlHashIdx
   ) public {
+    vm.assume(owner != address(0));
     vm.assume(urlHashes.length > 0);
     // Max 10 urls
     if (urlHashes.length > 10) {
@@ -168,6 +174,7 @@ contract ImplicitProjectRegistryTest is Test, TestHelper {
     bytes12 projectIdUpper,
     string memory url
   ) public {
+    vm.assume(owner != address(0));
     vm.assume(bytes(url).length > 0);
 
     bytes32 projectId = _projectId(projectIdUpper, owner);
@@ -191,6 +198,7 @@ contract ImplicitProjectRegistryTest is Test, TestHelper {
     string[] memory urls,
     uint256 urlIdx
   ) public {
+    vm.assume(owner != address(0));
     vm.assume(urls.length > 0);
     // Max 10 urls
     if (urls.length > 10) {
@@ -219,24 +227,49 @@ contract ImplicitProjectRegistryTest is Test, TestHelper {
 
   // Negative Tests
 
+  function test_fail_claimInvalidOwner(bytes12 projectIdUpper) public {
+    address owner = address(0);
+
+    vm.prank(owner);
+    vm.expectRevert(IImplicitProjectRegistry.InvalidProjectOwner.selector);
+    registry.claimProject(projectIdUpper);
+  }
+
+  function test_fail_transferInvalidOwner(address owner, bytes12 projectIdUpper) public {
+    bytes32 projectId = _projectId(projectIdUpper, owner);
+
+    vm.prank(owner);
+    registry.claimProject(projectIdUpper);
+
+    vm.prank(owner);
+    vm.expectRevert(IImplicitProjectRegistry.InvalidProjectOwner.selector);
+    registry.transferProject(projectId, address(0));
+  }
+
   function test_fail_claimProjectTwice(address owner, address otherUser, bytes12 projectIdUpper) public {
     vm.assume(owner != otherUser);
+    vm.assume(owner != address(0));
+    vm.assume(otherUser != address(0));
 
     bytes32 projectId = _projectId(projectIdUpper, owner);
 
-    vm.startPrank(owner);
+    vm.prank(owner);
     registry.claimProject(projectIdUpper);
 
     // Transfer the project to the other user
+    vm.prank(owner);
     registry.transferProject(projectId, otherUser);
 
     // Attempt to reclaim
     vm.expectRevert(IImplicitProjectRegistry.ProjectAlreadyClaimed.selector);
+    vm.prank(owner);
     registry.claimProject(projectIdUpper);
   }
 
-  function test_fail_addAdminByNonAdmin(address owner, address nonOwner, bytes12 projectIdUpper) public {
+  function test_fail_transferByNonAdmin(address owner, address nonOwner, bytes12 projectIdUpper) public {
     vm.assume(owner != nonOwner);
+    vm.assume(owner != address(0));
+    vm.assume(nonOwner != address(0));
 
     bytes32 projectId = _projectId(projectIdUpper, owner);
 
@@ -254,6 +287,7 @@ contract ImplicitProjectRegistryTest is Test, TestHelper {
     bytes12 projectIdUpper,
     string memory url
   ) public {
+    vm.assume(owner != address(0));
     vm.assume(owner != nonOwner);
 
     bytes32 projectId = _projectId(projectIdUpper, owner);
@@ -272,6 +306,7 @@ contract ImplicitProjectRegistryTest is Test, TestHelper {
     bytes12 projectIdUpper,
     bytes32 urlHash
   ) public {
+    vm.assume(owner != address(0));
     vm.assume(owner != nonOwner);
 
     bytes32 projectId = _projectId(projectIdUpper, owner);
@@ -290,6 +325,7 @@ contract ImplicitProjectRegistryTest is Test, TestHelper {
     bytes12 projectIdUpper,
     string memory url
   ) public {
+    vm.assume(owner != address(0));
     vm.assume(owner != nonOwner);
 
     bytes32 projectId = _projectId(projectIdUpper, owner);
@@ -308,6 +344,7 @@ contract ImplicitProjectRegistryTest is Test, TestHelper {
     bytes12 projectIdUpper,
     bytes32 urlHash
   ) public {
+    vm.assume(owner != address(0));
     vm.assume(owner != nonOwner);
 
     bytes32 projectId = _projectId(projectIdUpper, owner);
@@ -321,6 +358,7 @@ contract ImplicitProjectRegistryTest is Test, TestHelper {
   }
 
   function test_fail_addProjectUrlAlreadyExists(address owner, bytes12 projectIdUpper, string memory url) public {
+    vm.assume(owner != address(0));
     vm.assume(bytes(url).length > 0);
 
     vm.startPrank(owner);
@@ -333,6 +371,7 @@ contract ImplicitProjectRegistryTest is Test, TestHelper {
   }
 
   function test_fail_addProjectUrlHashAlreadyExists(address owner, bytes12 projectIdUpper, bytes32 urlHash) public {
+    vm.assume(owner != address(0));
     vm.startPrank(owner);
     bytes32 projectId = registry.claimProject(projectIdUpper);
     registry.addProjectUrlHash(projectId, urlHash);
@@ -343,6 +382,7 @@ contract ImplicitProjectRegistryTest is Test, TestHelper {
   }
 
   function test_fail_addProjectUrlAlreadyExistsHash(address owner, bytes12 projectIdUpper, string memory url) public {
+    vm.assume(owner != address(0));
     vm.startPrank(owner);
     bytes32 projectId = registry.claimProject(projectIdUpper);
     registry.addProjectUrlHash(projectId, _hashUrl(url));
@@ -357,6 +397,7 @@ contract ImplicitProjectRegistryTest is Test, TestHelper {
     bytes12 projectIdUpper,
     string memory url
   ) public {
+    vm.assume(owner != address(0));
     vm.startPrank(owner);
     bytes32 projectId = registry.claimProject(projectIdUpper);
     registry.addProjectUrl(projectId, url);
@@ -367,6 +408,7 @@ contract ImplicitProjectRegistryTest is Test, TestHelper {
   }
 
   function test_fail_removeNonexistentUrl(address owner, bytes12 projectIdUpper, string memory url) public {
+    vm.assume(owner != address(0));
     vm.assume(bytes(url).length > 0);
 
     bytes32 projectId = _projectId(projectIdUpper, owner);
@@ -380,6 +422,7 @@ contract ImplicitProjectRegistryTest is Test, TestHelper {
   }
 
   function test_fail_removeNonexistentUrlHash(address owner, bytes12 projectIdUpper, bytes32 urlHash) public {
+    vm.assume(owner != address(0));
     bytes32 projectId = _projectId(projectIdUpper, owner);
 
     vm.prank(owner);
@@ -396,6 +439,7 @@ contract ImplicitProjectRegistryTest is Test, TestHelper {
     bytes32[] memory urlHashes,
     uint256 urlHashIdx
   ) public {
+    vm.assume(owner != address(0));
     vm.assume(urlHashes.length > 0);
     // Max 10 urls
     if (urlHashes.length > 10) {
@@ -427,6 +471,7 @@ contract ImplicitProjectRegistryTest is Test, TestHelper {
     string memory validUrl,
     string memory invalidUrl
   ) public {
+    vm.assume(owner != address(0));
     vm.assume(bytes(validUrl).length > 0 && bytes(invalidUrl).length > 0);
     vm.assume(keccak256(bytes(validUrl)) != keccak256(bytes(invalidUrl)));
 

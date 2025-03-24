@@ -40,6 +40,9 @@ interface IImplicitProjectRegistry is IImplicitProjectValidation {
   /// @notice Project already claimed error
   error ProjectAlreadyClaimed();
 
+  /// @notice Invalid project owner error
+  error InvalidProjectOwner();
+
   /// @notice Project URL not found error
   error ProjectUrlNotFound();
 
