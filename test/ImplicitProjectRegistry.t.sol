@@ -227,7 +227,9 @@ contract ImplicitProjectRegistryTest is Test, TestHelper {
 
   // Negative Tests
 
-  function test_fail_claimInvalidOwner(bytes12 projectIdUpper) public {
+  function test_fail_claimInvalidOwner(
+    bytes12 projectIdUpper
+  ) public {
     address owner = address(0);
 
     vm.prank(owner);
