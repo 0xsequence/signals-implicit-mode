@@ -235,11 +235,7 @@ contract ImplicitProjectRegistryTest is Test, TestHelper {
     registry.claimProject(projectIdUpper);
   }
 
-  function test_fail_addAdminByNonAdmin(
-    address owner,
-    address nonOwner,
-    bytes12 projectIdUpper
-  ) public {
+  function test_fail_addAdminByNonAdmin(address owner, address nonOwner, bytes12 projectIdUpper) public {
     vm.assume(owner != nonOwner);
 
     bytes32 projectId = _projectId(projectIdUpper, owner);
