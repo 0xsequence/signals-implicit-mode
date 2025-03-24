@@ -239,6 +239,7 @@ contract ImplicitProjectRegistryTest is Test, TestHelper {
   }
 
   function test_fail_transferInvalidOwner(address owner, bytes12 projectIdUpper) public {
+    vm.assume(owner != address(0));
     bytes32 projectId = _projectId(projectIdUpper, owner);
 
     vm.prank(owner);
