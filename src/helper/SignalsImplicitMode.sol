@@ -11,10 +11,10 @@ abstract contract SignalsImplicitMode is ISignalsImplicitMode {
   IImplicitProjectValidation internal _validator;
   bytes32 internal _projectId;
 
-  /// @notice Constructor
+  /// @notice Initialize implicit mode validation
   /// @param validator The IImplicitProjectValidation address
   /// @param projectId The project id
-  constructor(address validator, bytes32 projectId) {
+  function _initializeSignalsImplicitMode(address validator, bytes32 projectId) internal {
     _validator = IImplicitProjectValidation(validator);
     _projectId = projectId;
   }

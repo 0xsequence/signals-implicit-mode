@@ -48,7 +48,9 @@ pragma solidity ^0.8.13;
 import {SignalsImplicitMode} from "signals-implicit-mode/helper/SignalsImplicitMode.sol";
 
 contract ImplicitSupportedContract is SignalsImplicitMode {
-    constructor(address registry, bytes32 projectId) SignalsImplicitMode(registry, projectId) {}
+    constructor(address registry, bytes32 projectId) {
+        _initializeSignalsImplicitMode(registry, projectId);
+    }
 }
 ```
 
