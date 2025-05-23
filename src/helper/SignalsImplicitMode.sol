@@ -20,11 +20,7 @@ abstract contract SignalsImplicitMode is ISignalsImplicitMode, ERC165 {
     _projectId = projectId;
   }
 
-  /// @notice Accepts an implicit request
-  /// @param wallet The wallet's address
-  /// @param attestation The attestation data
-  /// @param call The call to validate
-  /// @return The hash of the implicit request if valid
+  /// @inheritdoc ISignalsImplicitMode
   function acceptImplicitRequest(
     address wallet,
     Attestation calldata attestation,
