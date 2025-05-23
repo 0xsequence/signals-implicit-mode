@@ -5,8 +5,9 @@ import { Attestation } from "sequence-v3/src/extensions/sessions/implicit/Attest
 import { ISignalsImplicitMode } from "sequence-v3/src/extensions/sessions/implicit/ISignalsImplicitMode.sol";
 import { Payload } from "sequence-v3/src/modules/Payload.sol";
 import { IImplicitProjectValidation } from "src/registry/IImplicitProjectValidation.sol";
+import { ERC165, IERC165 } from "openzeppelin-contracts/contracts/utils/introspection/ERC165.sol";
 
-abstract contract SignalsImplicitMode is ISignalsImplicitMode {
+abstract contract SignalsImplicitMode is ISignalsImplicitMode, ERC165 {
 
   IImplicitProjectValidation internal _validator;
   bytes32 internal _projectId;
@@ -43,5 +44,10 @@ abstract contract SignalsImplicitMode is ISignalsImplicitMode {
     Attestation calldata attestation,
     Payload.Call calldata call
   ) internal view virtual { }
+
+  /// @inheritdoc IERC165
+  function supportsInterface(bytes4 interfaceId) public view virtual override returns (bool) {
+    return interfaceId == type(ISignalsImplicitMode).interfaceId || super.supportsInterface(interfaceId);
+  }
 
 }
