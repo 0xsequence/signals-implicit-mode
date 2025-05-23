@@ -52,7 +52,7 @@ jobs:
 
       - name: Run Coverage report
         run: |
-          forge coverage --no-match-coverage script
+          forge coverage --nmco script --nmco test
         id: coverage
 
       - name: Run Forge snapshot
