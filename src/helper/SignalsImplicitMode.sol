@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.13;
 
+import { ERC165, IERC165 } from "openzeppelin-contracts/contracts/utils/introspection/ERC165.sol";
 import { Attestation } from "sequence-v3/src/extensions/sessions/implicit/Attestation.sol";
 import { ISignalsImplicitMode } from "sequence-v3/src/extensions/sessions/implicit/ISignalsImplicitMode.sol";
 import { Payload } from "sequence-v3/src/modules/Payload.sol";
 import { IImplicitProjectValidation } from "src/registry/IImplicitProjectValidation.sol";
-import { ERC165, IERC165 } from "openzeppelin-contracts/contracts/utils/introspection/ERC165.sol";
 
 abstract contract SignalsImplicitMode is ISignalsImplicitMode, ERC165 {
 
@@ -42,7 +42,9 @@ abstract contract SignalsImplicitMode is ISignalsImplicitMode, ERC165 {
   ) internal view virtual { }
 
   /// @inheritdoc IERC165
-  function supportsInterface(bytes4 interfaceId) public view virtual override returns (bool) {
+  function supportsInterface(
+    bytes4 interfaceId
+  ) public view virtual override returns (bool) {
     return interfaceId == type(ISignalsImplicitMode).interfaceId || super.supportsInterface(interfaceId);
   }
 

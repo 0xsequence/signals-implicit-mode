@@ -8,10 +8,10 @@ import { Test, console } from "forge-std/Test.sol";
 import { IImplicitProjectValidation } from "src/registry/IImplicitProjectValidation.sol";
 import { ImplicitProjectRegistry } from "src/registry/ImplicitProjectRegistry.sol";
 
-import { ISignalsImplicitMode } from "sequence-v3/src/extensions/sessions/implicit/ISignalsImplicitMode.sol";
-import { Attestation, LibAttestation } from "sequence-v3/src/extensions/sessions/implicit/Attestation.sol";
-import { Payload } from "sequence-v3/src/modules/Payload.sol";
 import { IERC165 } from "openzeppelin-contracts/contracts/utils/introspection/IERC165.sol";
+import { Attestation, LibAttestation } from "sequence-v3/src/extensions/sessions/implicit/Attestation.sol";
+import { ISignalsImplicitMode } from "sequence-v3/src/extensions/sessions/implicit/ISignalsImplicitMode.sol";
+import { Payload } from "sequence-v3/src/modules/Payload.sol";
 
 contract SignalsImplicitModeTest is Test, TestHelper {
 
@@ -24,7 +24,9 @@ contract SignalsImplicitModeTest is Test, TestHelper {
     registry = new ImplicitProjectRegistry();
   }
 
-  function test_supportsInterface(bytes32 projectId) public {
+  function test_supportsInterface(
+    bytes32 projectId
+  ) public {
     signalsImplicitMode = new SignalsImplicitModeMock(address(registry), projectId);
     assertEq(signalsImplicitMode.supportsInterface(type(IERC165).interfaceId), true);
     assertEq(signalsImplicitMode.supportsInterface(type(ISignalsImplicitMode).interfaceId), true);
