@@ -5,6 +5,9 @@ import { IImplicitProjectRegistry } from "./IImplicitProjectRegistry.sol";
 import { IImplicitProjectValidation } from "./IImplicitProjectValidation.sol";
 import { Attestation, LibAttestation } from "sequence-v3/src/extensions/sessions/implicit/Attestation.sol";
 
+/// @title ImplicitProjectRegistry
+/// @author Michael Standen
+/// @notice Registry of projects supporting implicit sessions
 contract ImplicitProjectRegistry is IImplicitProjectRegistry {
 
   using LibAttestation for Attestation;

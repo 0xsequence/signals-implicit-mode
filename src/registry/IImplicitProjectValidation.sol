@@ -3,6 +3,9 @@ pragma solidity ^0.8.13;
 
 import { Attestation } from "sequence-v3/src/extensions/sessions/implicit/Attestation.sol";
 
+/// @title IImplicitProjectValidation
+/// @author Michael Standen
+/// @notice Interface for contracts supporting validation of implicit sessions for projects
 interface IImplicitProjectValidation {
 
   /// @notice Invalid redirect url error

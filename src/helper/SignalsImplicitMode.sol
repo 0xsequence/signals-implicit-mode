@@ -7,6 +7,9 @@ import { ISignalsImplicitMode } from "sequence-v3/src/extensions/sessions/implic
 import { Payload } from "sequence-v3/src/modules/Payload.sol";
 import { IImplicitProjectValidation } from "src/registry/IImplicitProjectValidation.sol";
 
+/// @title SignalsImplicitMode
+/// @author Michael Standen
+/// @notice Base contract for implicit mode validation by project
 abstract contract SignalsImplicitMode is ISignalsImplicitMode, ERC165 {
 
   IImplicitProjectValidation internal _validator;

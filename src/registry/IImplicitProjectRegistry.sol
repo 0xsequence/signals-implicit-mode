@@ -3,6 +3,9 @@ pragma solidity ^0.8.13;
 
 import { IImplicitProjectValidation } from "src/registry/IImplicitProjectValidation.sol";
 
+/// @title IImplicitProjectRegistry
+/// @author Michael Standen
+/// @notice Interface for the registry of projects supporting implicit sessions
 interface IImplicitProjectRegistry is IImplicitProjectValidation {
 
   /// @notice Claim a project
