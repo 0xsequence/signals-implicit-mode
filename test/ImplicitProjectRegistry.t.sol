@@ -80,6 +80,37 @@ contract ImplicitProjectRegistryTest is Test, TestHelper {
     assertEq(urls[0], _hashUrl(url));
   }
 
+  function test_addProjectUrlBatch(address owner, bytes12 projectIdUpper, string[] memory urls) public {
+    vm.assume(owner != address(0));
+    vm.assume(urls.length > 0);
+    // Max 10 urls
+    if (urls.length > 10) {
+      assembly {
+        mstore(urls, 10)
+      }
+    }
+    urls = _deduplicateStringArray(urls);
+
+    bytes32 projectId = _projectId(projectIdUpper, owner);
+
+    vm.startPrank(owner);
+    registry.claimProject(projectIdUpper);
+
+    for (uint256 i; i < urls.length; i++) {
+      vm.expectEmit();
+      emit IImplicitProjectRegistry.ProjectUrlAdded(projectId, _hashUrl(urls[i]));
+    }
+
+    registry.addProjectUrlBatch(projectId, urls);
+    vm.stopPrank();
+
+    bytes32[] memory actualUrls = registry.listProjectUrls(projectId);
+    assertEq(actualUrls.length, urls.length);
+    for (uint256 i; i < actualUrls.length; i++) {
+      assertEq(actualUrls[i], _hashUrl(urls[i]));
+    }
+  }
+
   function test_addProjectUrlHash(address owner, bytes12 projectIdUpper, bytes32 urlHash) public {
     vm.assume(owner != address(0));
     bytes32 projectId = _projectId(projectIdUpper, owner);
