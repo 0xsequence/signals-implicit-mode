@@ -54,10 +54,7 @@ contract ImplicitProjectRegistry is IImplicitProjectRegistry {
     emit IImplicitProjectRegistry.ProjectOwnerTransferred(projectId, newOwner);
   }
 
-  /// @notice Add a project URL hash
-  /// @param projectId The project id
-  /// @param projectUrlHash The project URL hash
-  function addProjectUrlHash(bytes32 projectId, bytes32 projectUrlHash) public onlyProjectOwner(projectId) {
+  function _addProjectUrlHash(bytes32 projectId, bytes32 projectUrlHash) internal {
     if (isProjectUrl[projectId][projectUrlHash]) {
       revert IImplicitProjectRegistry.ProjectUrlAlreadyExists();
     }
@@ -66,9 +63,47 @@ contract ImplicitProjectRegistry is IImplicitProjectRegistry {
     emit IImplicitProjectRegistry.ProjectUrlAdded(projectId, projectUrlHash);
   }
 
+  /// @notice Add a project URL hash
+  /// @param projectId The project id
+  /// @param projectUrlHash The project URL hash
+  function addProjectUrlHash(bytes32 projectId, bytes32 projectUrlHash) external onlyProjectOwner(projectId) {
+    _addProjectUrlHash(projectId, projectUrlHash);
+  }
+
+  /// @notice Add a list of project URL hashes
+  /// @param projectId The project id
+  /// @param projectUrlHashes The project URL hashes
+  function addProjectUrlHashBatch(
+    bytes32 projectId,
+    bytes32[] memory projectUrlHashes
+  ) external onlyProjectOwner(projectId) {
+    for (uint256 i; i < projectUrlHashes.length; i++) {
+      _addProjectUrlHash(projectId, projectUrlHashes[i]);
+    }
+  }
+
   /// @inheritdoc IImplicitProjectRegistry
   function addProjectUrl(bytes32 projectId, string memory projectUrl) public onlyProjectOwner(projectId) {
-    addProjectUrlHash(projectId, _hashUrl(projectUrl));
+    _addProjectUrlHash(projectId, _hashUrl(projectUrl));
+  }
+
+  /// @notice Add a list of project URLs
+  /// @param projectId The project id
+  /// @param projectUrls The project URLs
+  function addProjectUrlBatch(bytes32 projectId, string[] memory projectUrls) external onlyProjectOwner(projectId) {
+    for (uint256 i; i < projectUrls.length; i++) {
+      _addProjectUrlHash(projectId, _hashUrl(projectUrls[i]));
+    }
+  }
+
+  function _removeProjectUrlHash(bytes32 projectId, bytes32 projectUrlHash, uint256 urlIdx) internal {
+    if (urlIdx >= projectUrlsList[projectId].length || projectUrlsList[projectId][urlIdx] != projectUrlHash) {
+      revert IImplicitProjectRegistry.InvalidProjectUrlIndex();
+    }
+    isProjectUrl[projectId][projectUrlHash] = false;
+    projectUrlsList[projectId][urlIdx] = projectUrlsList[projectId][projectUrlsList[projectId].length - 1];
+    projectUrlsList[projectId].pop();
+    emit IImplicitProjectRegistry.ProjectUrlRemoved(projectId, projectUrlHash);
   }
 
   /// @notice Remove a project URL hash
@@ -79,26 +114,42 @@ contract ImplicitProjectRegistry is IImplicitProjectRegistry {
     bytes32 projectId,
     bytes32 projectUrlHash,
     uint256 urlIdx
-  ) public onlyProjectOwner(projectId) {
-    if (!isProjectUrl[projectId][projectUrlHash]) {
-      revert IImplicitProjectRegistry.ProjectUrlNotFound();
-    }
-    if (urlIdx >= projectUrlsList[projectId].length || projectUrlsList[projectId][urlIdx] != projectUrlHash) {
+  ) external onlyProjectOwner(projectId) {
+    _removeProjectUrlHash(projectId, projectUrlHash, urlIdx);
+  }
+
+  /// @notice Remove a list of project URL hashes
+  /// @param projectId The project id
+  /// @param projectUrlHashes The project URL hashes
+  /// @param urlIdxs The indexes of the project URL hashes to remove
+  /// @dev The urlIdxs must be sorted in descending order
+  function removeProjectUrlHashBatch(
+    bytes32 projectId,
+    bytes32[] memory projectUrlHashes,
+    uint256[] memory urlIdxs
+  ) external onlyProjectOwner(projectId) {
+    if (projectUrlHashes.length != urlIdxs.length) {
       revert IImplicitProjectRegistry.InvalidProjectUrlIndex();
     }
-    isProjectUrl[projectId][projectUrlHash] = false;
-    projectUrlsList[projectId][urlIdx] = projectUrlsList[projectId][projectUrlsList[projectId].length - 1];
-    projectUrlsList[projectId].pop();
-    emit IImplicitProjectRegistry.ProjectUrlRemoved(projectId, projectUrlHash);
+    // Ensure the urlIdxs are sorted descending to prevent issues with reordering during removals
+    for (uint256 i; i < urlIdxs.length - 1; i++) {
+      if (urlIdxs[i] < urlIdxs[i + 1]) {
+        revert IImplicitProjectRegistry.InvalidProjectUrlIndex();
+      }
+    }
+    for (uint256 i; i < projectUrlHashes.length; i++) {
+      _removeProjectUrlHash(projectId, projectUrlHashes[i], urlIdxs[i]);
+    }
   }
 
   /// @inheritdoc IImplicitProjectRegistry
-  function removeProjectUrl(bytes32 projectId, string memory projectUrl) public onlyProjectOwner(projectId) {
+  /// @dev This function is not optimized. Prefer to use removeProjectUrlHash.
+  function removeProjectUrl(bytes32 projectId, string memory projectUrl) external onlyProjectOwner(projectId) {
     // Find the index of the project URL hash
     bytes32 projectUrlHash = _hashUrl(projectUrl);
     for (uint256 i; i < projectUrlsList[projectId].length; i++) {
       if (projectUrlsList[projectId][i] == projectUrlHash) {
-        removeProjectUrlHash(projectId, projectUrlHash, i);
+        _removeProjectUrlHash(projectId, projectUrlHash, i);
         return;
       }
     }
@@ -108,7 +159,7 @@ contract ImplicitProjectRegistry is IImplicitProjectRegistry {
   /// @inheritdoc IImplicitProjectRegistry
   function listProjectUrls(
     bytes32 projectId
-  ) public view returns (bytes32[] memory) {
+  ) external view returns (bytes32[] memory) {
     return projectUrlsList[projectId];
   }
 
