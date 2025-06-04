@@ -231,11 +231,7 @@ contract ImplicitProjectRegistryTest is Test, TestHelper {
     }
   }
 
-  function test_removeProjectUrlHashBatch(
-    address owner,
-    bytes12 projectIdUpper,
-    bytes32[] memory urlHashes
-  ) public {
+  function test_removeProjectUrlHashBatch(address owner, bytes12 projectIdUpper, bytes32[] memory urlHashes) public {
     vm.assume(owner != address(0));
     vm.assume(urlHashes.length > 0);
     // Max 10 urls
