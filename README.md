@@ -65,7 +65,7 @@ forge test
 ## Deploy Contracts
 
 > [!NOTE]
-> This will deploy the `ImplicitProjectRegistry`. Deployments use ERC-2470 for counter factual deployments and will deploy to `0x88132015f17526dA2119F1Efb8BAC818b2CcA2Eb`.
+> This will deploy the `ImplicitProjectRegistry`. Deployments use ERC-2470 for counter factual deployments and will deploy to `0x0c64fF77E0C64629B17fABd41f81754568e0846b`.
 
 > [!TIP]
 > The `ImplicitProjectRegistry` is ownerless and so you are free to use an implementation and claim any `projectId`. You do not need to deploy your own instance.
