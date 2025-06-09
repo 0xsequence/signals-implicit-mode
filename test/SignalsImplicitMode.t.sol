@@ -5,8 +5,8 @@ import { TestHelper } from "./TestHelper.sol";
 import { SignalsImplicitModeMock } from "./mock/SignalsImplicitModeMock.sol";
 import { Test, console } from "forge-std/Test.sol";
 
-import { IImplicitProjectValidation } from "src/registry/IImplicitProjectValidation.sol";
-import { ImplicitProjectRegistry } from "src/registry/ImplicitProjectRegistry.sol";
+import { IImplicitProjectValidation } from "../src/registry/IImplicitProjectValidation.sol";
+import { ImplicitProjectRegistry } from "../src/registry/ImplicitProjectRegistry.sol";
 
 import { IERC165 } from "openzeppelin-contracts/contracts/utils/introspection/IERC165.sol";
 import { Attestation, LibAttestation } from "sequence-v3/src/extensions/sessions/implicit/Attestation.sol";

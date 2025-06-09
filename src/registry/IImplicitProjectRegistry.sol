@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.13;
 
-import { IImplicitProjectValidation } from "src/registry/IImplicitProjectValidation.sol";
+import { IImplicitProjectValidation } from "./IImplicitProjectValidation.sol";
 
 /// @title IImplicitProjectRegistry
 /// @author Michael Standen

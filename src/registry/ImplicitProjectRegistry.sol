@@ -3,6 +3,7 @@ pragma solidity ^0.8.13;
 
 import { IImplicitProjectRegistry } from "./IImplicitProjectRegistry.sol";
 import { IImplicitProjectValidation } from "./IImplicitProjectValidation.sol";
+
 import { Attestation, LibAttestation } from "sequence-v3/src/extensions/sessions/implicit/Attestation.sol";
 
 /// @title ImplicitProjectRegistry

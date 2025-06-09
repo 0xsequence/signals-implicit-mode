@@ -5,9 +5,9 @@ import { TestHelper } from "./TestHelper.sol";
 import { SignalsImplicitModeMock } from "./mock/SignalsImplicitModeMock.sol";
 import { Test, console } from "forge-std/Test.sol";
 
-import { IImplicitProjectRegistry } from "src/registry/IImplicitProjectRegistry.sol";
-import { IImplicitProjectValidation } from "src/registry/IImplicitProjectValidation.sol";
-import { ImplicitProjectRegistry } from "src/registry/ImplicitProjectRegistry.sol";
+import { IImplicitProjectRegistry } from "../src/registry/IImplicitProjectRegistry.sol";
+import { IImplicitProjectValidation } from "../src/registry/IImplicitProjectValidation.sol";
+import { ImplicitProjectRegistry } from "../src/registry/ImplicitProjectRegistry.sol";
 
 import { Attestation, LibAttestation } from "sequence-v3/src/extensions/sessions/implicit/Attestation.sol";
 

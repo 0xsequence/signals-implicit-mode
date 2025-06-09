@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.13;
 
+import { IImplicitProjectValidation } from "../registry/IImplicitProjectValidation.sol";
+
 import { ERC165, IERC165 } from "openzeppelin-contracts/contracts/utils/introspection/ERC165.sol";
 import { Attestation } from "sequence-v3/src/extensions/sessions/implicit/Attestation.sol";
 import { ISignalsImplicitMode } from "sequence-v3/src/extensions/sessions/implicit/ISignalsImplicitMode.sol";
 import { Payload } from "sequence-v3/src/modules/Payload.sol";
-import { IImplicitProjectValidation } from "src/registry/IImplicitProjectValidation.sol";
 
 /// @title SignalsImplicitMode
 /// @author Michael Standen
