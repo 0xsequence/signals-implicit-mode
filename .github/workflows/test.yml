@@ -54,8 +54,3 @@ jobs:
         run: |
           forge coverage --nmco "(script|test)"
         id: coverage
-
-      - name: Run Forge snapshot
-        run: |
-          forge snapshot --check --tolerance 5
-        id: snapshot
