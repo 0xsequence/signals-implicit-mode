@@ -10,7 +10,7 @@ contract TestHelper {
   }
 
   function _projectId(bytes12 projectIdUpper, address owner) internal pure returns (bytes32 projectId) {
-    projectId = bytes32(uint256(bytes32(projectIdUpper)) << 160 | uint160(owner));
+    projectId = bytes32(abi.encodePacked(projectIdUpper, owner));
   }
 
   function _deduplicateBytes32Array(

@@ -37,9 +37,7 @@ contract ImplicitProjectRegistry is IImplicitProjectRegistry {
     if (owner == address(0)) {
       revert IImplicitProjectRegistry.InvalidProjectOwner();
     }
-    assembly {
-      projectId := or(shl(160, projectIdUpper), owner)
-    }
+    projectId = bytes32(abi.encodePacked(projectIdUpper, owner));
     if (projectOwner[projectId] != address(0)) {
       revert IImplicitProjectRegistry.ProjectAlreadyClaimed();
     }

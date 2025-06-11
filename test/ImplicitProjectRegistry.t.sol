@@ -31,8 +31,9 @@ contract ImplicitProjectRegistryTest is Test, TestHelper {
     emit IImplicitProjectRegistry.ProjectClaimed(projectId, owner);
 
     vm.prank(owner);
-    registry.claimProject(projectIdUpper);
+    bytes32 claimedProjectId = registry.claimProject(projectIdUpper);
 
+    assertEq(claimedProjectId, projectId);
     assertEq(registry.projectOwner(projectId), owner);
   }
 
